@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="BLE蓝牙调试工具" />
+    <meta name="theme-color" content="#fafafa" />
+    <link rel="apple-touch-icon" href="logo192.png" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="stylesheet" href="light.min.css"> <!-- https://watercss.kognise.dev/ -->
+    <title>BLE蓝牙调试工具</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            width: 100%;
+            height: 100vh;
+            box-sizing: border-box;
+            font-family: Consolas;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+        }
+        .input-group {
+            display: flex;
+            margin-bottom: 10px;
+            width: 100%;
+        }
+        .input-group input {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            box-sizing: border-box;
+            font-family: Consolas;
+        }
+        .input-group button {
+            padding: 10px;
+            font-size: 16px;
+            box-sizing: border-box;
+            font-family: Consolas;
+        }
+        .textarea-group {
+            display: flex;
+            margin-bottom: 10px;
+            width: 100%;
+        }
+        .textarea-group textarea {
+            flex: 1;
+            padding: 10px;
+            font-size: 14px;
+            height: 110px;
+            box-sizing: border-box;
+            font-family: Consolas;
+        }
+        .textarea-group button {
+            padding: 10px;
+            font-size: 16px;
+            margin-left: 10px;
+            box-sizing: border-box;
+            font-family: Consolas;
+        }
+        #recvinfo {
+            width: 100%;
+            height: 150px;
+            padding: 10px;
+            font-size: 14px;
+            margin-top: 10px;
+            box-sizing: border-box;
+            font-family: Consolas;
+        }
+
+        /* 日志显示字体略小 */
+        #loginfo {
+            font-size: 12px;
+            font-family: Consolas;
+        }
+        @media (max-width: 600px) {
+            .input-group, .textarea-group {
+                flex-direction: column;
+            }
+            .textarea-group button {
+                margin-left: 0;
+                margin-top: 10px;
+            }
+        }
+        .misc {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            margin: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="input-group">
+            <input type="text" id="device-filter" placeholder="设备名称过滤（可选）" value="Pet" style="flex: 1; margin-right: 10px;">
+            <input type="text" id="device-name" placeholder="设备名称" readonly>
+            <button id="main-button" onclick="handleButtonClick()" style="width: 120px;">连接</button>
+        </div>
+        <div class="input-group">
+            <label style="font-size: smaller; flex: 1;">TX ID: <span id="tx-char-id"></span></label>
+            <label style="font-size: smaller; flex: 1;">RX ID: <span id="rx-char-id"></span></label>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <label for="loginfo">接收</label>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <label style="font-size:14px; display:flex; align-items:center; gap:6px;">
+                    <input type="checkbox" id="recv-hex-mode" /> HEX
+                </label>
+                <button onclick="clearLog()" style="width: 120px;">清除</button>
+            </div>
+        </div>
+        <div id="loginfo" style="flex-grow: 1; width: 100%; overflow-y: auto; overflow-x: auto; white-space: pre; font-family: Consolas; font-size: 12px; background-color: #1e1e1e; color: #cccccc; margin-bottom: 10px;"></div>
+        <div class="textarea-group" style="display: flex; flex-direction: column;">
+            <textarea id="send-text" placeholder="输入要发送的内容" style="background-color: #1e1e1e; color: #cccccc; font-family: Consolas; font-size: 12px;"></textarea>
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+                <label style="font-size:14px; display:flex; align-items:center; gap:6px;">
+                    <input type="checkbox" id="utf8-mode" /> HEX
+                </label>
+                <label style="font-size:14px; display:flex; align-items:center; gap:6px;">
+                    <input type="checkbox" id="auto-newline" checked /> 发送回车换行
+                </label>
+                <button id="send-button" onclick="senddata()" disabled style="margin-left: auto; width: 120px;">发送</button>
+            </div>
+        </div>
+        <div class="misc">
+            <button id="install-button" hidden>将蓝牙调试工具安装到系统</button>
+            <p style="font-size: smaller; color: gray; margin: 0%">
+                <span style="font-size: smaller">蓝牙检查：edge://bluetooth-internals/#adapter copyright (c) 2024 etmedia, licensed under MIT License</span>
+            </p>
+        </div>
+    </div>    
+    <dialog id="dialog">
+        <header>出现错误</header>
+        <form method="dialog">
+            <p id="dialog-content"></p>
+            <menu style="display: flex; justify-content: flex-end;">
+                <button onclick="succeeded = false">好</button>
+            </menu>
+        </form>
+    </dialog>
+</body>
+
+<script>
+    function clearLog() {
+        document.getElementById('loginfo').innerHTML = '';
+    }
+    function makePayload() {
+        const text = document.getElementById('send-text').value;
+        const isHex = document.getElementById('utf8-mode').checked;
+        const autoNewline = document.getElementById('auto-newline') && document.getElementById('auto-newline').checked;
+        if (!isHex) {
+            const t = autoNewline ? (text + '\n') : text;
+            return new TextEncoder().encode(t);
+        }
+        const cleanedText = text.replace(/\s+/g, '');
+        const uint8Array = new Uint8Array(cleanedText.length / 2);
+        for (let i = 0; i < cleanedText.length; i += 2) {
+            uint8Array[i / 2] = parseInt(cleanedText.substr(i, 2), 16);
+        }
+        if (autoNewline) {
+            const out = new Uint8Array(uint8Array.length + 1);
+            out.set(uint8Array, 0);
+            out[out.length - 1] = 0x0A; // LF
+            return out;
+        }
+        return uint8Array;
+    }
+
+    function ansiToHtml(text) {
+        // ANSI颜色代码映射
+        const colors = {
+            30: 'black', 31: 'red', 32: 'green', 33: 'yellow',
+            34: 'blue', 35: 'magenta', 36: 'cyan', 37: 'white'
+        };
+        const bgColors = {
+            40: 'black', 41: 'red', 42: 'green', 43: 'yellow',
+            44: 'blue', 45: 'magenta', 46: 'cyan', 47: 'white'
+        };
+
+        let result = '';
+        let currentStyle = {};
+        let i = 0;
+
+        while (i < text.length) {
+            if (text.substr(i, 2) === '\x1b[') {
+                // 找到转义序列开始
+                let j = i + 2;
+                let codeStr = '';
+                while (j < text.length && text[j] !== 'm') {
+                    codeStr += text[j];
+                    j++;
+                }
+                if (text[j] === 'm') {
+                    // 解析代码
+                    const codes = codeStr.split(';').map(c => parseInt(c));
+                    codes.forEach(code => {
+                        if (code === 0) {
+                            // 重置
+                            currentStyle = {};
+                        } else if (code === 1) {
+                            currentStyle.bold = true;
+                        } else if (code >= 30 && code <= 37) {
+                            currentStyle.color = colors[code];
+                        } else if (code >= 40 && code <= 47) {
+                            currentStyle.backgroundColor = bgColors[code];
+                        }
+                    });
+                    i = j + 1;
+                } else {
+                    // 无效序列，跳过
+                    i++;
+                }
+            } else {
+                // 普通字符
+                let char = text[i];
+                let styleStr = '';
+                if (currentStyle.color) styleStr += `color: ${currentStyle.color}; `;
+                if (currentStyle.backgroundColor) styleStr += `background-color: ${currentStyle.backgroundColor}; `;
+                if (currentStyle.bold) styleStr += 'font-weight: bold; ';
+                if (styleStr) {
+                    result += `<span style="${styleStr}">${char}</span>`;
+                } else {
+                    result += char;
+                }
+                i++;
+            }
+        }
+        return result;
+    }
+
+    function log(message) {
+        const logInfo = document.getElementById("loginfo");
+        // 解析ANSI转义序列并转换为HTML
+        const htmlMessage = ansiToHtml(message);
+        // 追加HTML消息并自动滚动到底部
+        logInfo.innerHTML += htmlMessage;
+        try { logInfo.scrollTop = logInfo.scrollHeight; } catch (e) { /* ignore */ }
+    }
+
+    let bluetoothDevice;
+    let Characteristic;
+    let CharacteristicRx;
+    let isStarted = false;
+
+    function updateUi(stage) {
+        const mainButton = document.getElementById("main-button");
+        const sendButton = document.getElementById("send-button");
+        const deviceName = document.getElementById("device-name");
+        const status = document.getElementById("status");
+        const recvinfo = document.getElementById("recvinfo");
+        switch (stage) {
+            case "pending":
+                mainButton.innerText = "请稍后";
+                mainButton.disabled = true;
+                sendButton.disabled = true;
+                deviceName.value = "已连接：" + bluetoothDevice.name;
+                break;
+            case "ok":
+                mainButton.innerText = "结束";
+                mainButton.disabled = false;
+                sendButton.disabled = false;
+                break;
+            case "standby":
+                mainButton.innerText = "开启";
+                mainButton.disabled = false;
+                sendButton.disabled = false;
+                deviceName.value = "未连接";
+                document.getElementById('tx-char-id').textContent = "";
+                document.getElementById('rx-char-id').textContent = "";
+                break;
+        }
+    }
+
+    async function handleBluetoothError(error) {
+        console.log(error)
+        // this is so fucking ugly but i have no choice
+        // you would never know how those shitty browsers behave
+        if (error.toString().match(/User cancelled/) || error.toString() == "2") return; // "2" is a weird behavior of Bluefy browser on iOS
+        const dialogContent = document.getElementById("dialog-content");
+        if (!navigator.bluetooth || error.toString().match(/Bluetooth adapter not available/)) {
+            dialogContent.innerText = "找不到蓝牙硬件，或浏览器不支持。\n\n限于篇幅，详情请参考源代码仓库内的“疑难解答”。";
+        } else if (error.toString().match(/User denied the browser permission/)) {
+            dialogContent.innerText = "蓝牙权限遭拒。\n\n请前往手机设置，授予浏览器“位置信息”权限。\n此权限不会用于定位，详情请参考源代码仓库内的“疑难解答”。";
+        } else if (error.toString().match(/NetworkError/)) {
+            dialogContent.innerText = "连接不稳定，无法与蓝牙设备建立连接。\n请重试。";
+        } else {
+            dialogContent.innerText = error + "\n\n是什么呢\n\n（这可能是一个Bug，请截图并反馈给开发者。）";
+        }
+        document.getElementById("dialog").showModal();
+        if (bluetoothDevice) await bluetoothDevice.gatt.disconnect();
+        isStarted = false;
+        updateUi("standby");
+    }
+
+    function bufferToHexString(array) {
+    // explanation: [0x12, 0x34, 0xAB, 0xCD] => "1234ABCD"
+    return Array.from(new Uint8Array(array))
+        .map((x) => x.toString(16).padStart(2, "0"))
+        .join("")
+        .toUpperCase();
+    }
+
+    async function handleRxdNotifications(event) {
+        const value = event.target.value;
+        const bytes = new Uint8Array(value.buffer);
+        const isHex = document.getElementById('recv-hex-mode').checked;
+        if (isHex) {
+            const hex = bufferToHexString(bytes);
+            log(hex + '\n');
+        } else {
+            let utf8 = '';
+            try {
+                utf8 = new TextDecoder().decode(bytes);
+            } catch (e) {
+                utf8 = '[无法以 UTF-8 解码]';
+            }
+            log(utf8);
+        }
+    }
+
+    async function senddata() {
+        try {
+            const payload = makePayload();
+            // const hex = bufferToHexString(payload);
+            // let utf8 = '';
+            // try { utf8 = new TextDecoder().decode(payload); } catch(e) { utf8 = '[无法以 UTF-8 解码]'; }
+            // log(utf8);
+            await Characteristic.writeValue(payload);
+        } catch (error) {
+            log('发送失败: ' + error);
+        }
+    }
+
+    async function start() {
+        try {
+            const filterValue = document.getElementById('device-filter').value.trim();
+            const options = {
+                optionalServices: ['0000d0d0-0000-1000-8000-00805f9b34fb', window.navigator.userAgent.match(/Bluefy/) ? "generic_access" : 0xFFE0, '6e400001-b5a3-f393-e0a9-e50e24dcca9e']
+            };
+            if (filterValue) {
+                options.filters = [{ namePrefix: filterValue }];
+            } else {
+                options.acceptAllDevices = true;
+            }
+            bluetoothDevice = await navigator.bluetooth.requestDevice(options);
+            updateUi("pending");
+            const server = await bluetoothDevice.gatt.connect();
+            const services = await server.getPrimaryServices();
+            if(services.length == 0){
+                throw new Error('No services found');
+                return;
+            }
+            // 优先使用特定服务UUID
+            let service = services.find(s => s.uuid.toLowerCase() === '0000d0d0-0000-1000-8000-00805f9b34fb');
+            if (!service) {
+                service = services[0];
+            }
+            // console.log(`service`, service.uuid);
+            // 获取可以读写字符流的服务
+            const Characteristics = await service.getCharacteristics();
+            if(Characteristics.length == 0){
+                throw new Error('No characteristics found');
+                return;
+            }
+            // 判断服务UUID，如果是特定服务，则使用特定的特征UUID
+            let txChar = null;
+            let rxChar = null;
+            if (service.uuid.toLowerCase() === '0000d0d0-0000-1000-8000-00805f9b34fb') {
+                txChar = Characteristics.find(c => c.uuid.toLowerCase() === '0000d0d1-0000-1000-8000-00805f9b34fb');
+                rxChar = Characteristics.find(c => c.uuid.toLowerCase() === '0000d0d2-0000-1000-8000-00805f9b34fb');
+            }
+            else if (service.uuid.toLowerCase() === '6e400001-b5a3-f393-e0a9-e50e24dcca9e') {
+                txChar = Characteristics.find(c => c.uuid.toLowerCase() === '6e400002-b5a3-f393-e0a9-e50e24dcca9e');
+                rxChar = Characteristics.find(c => c.uuid.toLowerCase() === '6e400005-b5a3-f393-e0a9-e50e24dcca9e');
+            }
+            if (!txChar || !rxChar) {
+                // 如果没找到，fallback到旧逻辑
+                if(Characteristics.length == 1) {
+                    txChar = Characteristics[0];
+                    rxChar = Characteristics[0];
+                } else {
+                    txChar = Characteristics[0];
+                    rxChar = Characteristics[1];
+                }
+            }
+            Characteristic = txChar;
+            CharacteristicRx = rxChar;
+            await CharacteristicRx.startNotifications();
+            CharacteristicRx.addEventListener("characteristicvaluechanged", handleRxdNotifications);
+            // // 写入字节(括号中的方法为把字符串转为字符流,传输给蓝牙)
+            // await Characteristic.writeValue(makePayload(bluetoothDevice.name));
+            document.getElementById('tx-char-id').textContent = Characteristic.uuid;
+            document.getElementById('rx-char-id').textContent = CharacteristicRx.uuid;
+            isStarted = true;
+            updateUi("ok");
+        } catch (error) {
+            handleBluetoothError(error);
+        }
+    }
+
+    async function end() {
+        try {
+            // const endPayload = new Uint8Array([0xFE, 0xFE, 0x09, 0xB3, 0x00, 0x00])
+            // await txdCharacteristic.writeValue(endPayload)
+            await bluetoothDevice.gatt.disconnect();
+            isStarted = false;
+            updateUi("standby");
+        } catch (error) {
+            handleBluetoothError(error);
+        }
+    }
+
+    function handleButtonClick() {
+        isStarted ? end() : start();
+    }
+
+    // 添加键盘事件监听器到发送窗口
+    document.getElementById('send-text').addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            if (event.ctrlKey) {
+                // Ctrl+Enter 手动插入换行
+                const textarea = event.target;
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                textarea.value = textarea.value.substring(0, start) + '\n' + textarea.value.substring(end);
+                textarea.selectionStart = textarea.selectionEnd = start + 1;
+                event.preventDefault();
+            } else {
+                // Enter 直接发送
+                event.preventDefault();
+                senddata();
+            }
+        }
+    });
+</script>
+
+</html>
