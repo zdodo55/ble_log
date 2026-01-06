@@ -347,7 +347,7 @@
         try {
             const filterValue = document.getElementById('device-filter').value.trim();
             const options = {
-                optionalServices: ['0000d0d0-0000-1000-8000-00805f9b34fb', window.navigator.userAgent.match(/Bluefy/) ? "generic_access" : 0xFFE0, '6e400001-b5a3-f393-e0a9-e50e24dcca9e']
+                optionalServices: ['0000d0d0-0000-1000-8000-00805f9b34fb', '6e400001-b5a3-f393-e0a9-e50e24dcca9e']
             };
             if (filterValue) {
                 options.filters = [{ namePrefix: filterValue }];
