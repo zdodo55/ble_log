@@ -104,13 +104,13 @@
 <body>
     <div class="container">
         <div class="input-group">
-            <input type="text" id="device-filter" placeholder="设备名称过滤（可选）" value="Pet" style="flex: 1; margin-right: 10px;">
-            <input type="text" id="device-name" placeholder="设备名称" readonly>
+            <input type="text" id="device-filter" placeholder="名称过滤" value="Pet" style="flex: 0; margin-right: 10px;">
+            <div class="input-group" style="display: flex; flex-direction: column;">
+                <label style="flex: 1;">已连接: <span id="device-name"></span></label>
+                <label style="font-size: smaller; flex: 1;">TX ID: <span id="tx-char-id"></span></label>
+                <label style="font-size: smaller; flex: 1;">RX ID: <span id="rx-char-id"></span></label>
+            </div>
             <button id="main-button" onclick="handleButtonClick()" style="width: 60px;">连接</button>
-        </div>
-        <div class="input-group">
-            <label style="font-size: smaller; flex: 1;">TX ID: <span id="tx-char-id"></span></label>
-            <label style="font-size: smaller; flex: 1;">RX ID: <span id="rx-char-id"></span></label>
         </div>
         <div style="display: flex; align-items: center; justify-content: space-between;">
             <label for="loginfo">接收</label>
@@ -136,9 +136,6 @@
         </div>
         <div class="misc">
             <button id="install-button" hidden>将蓝牙调试工具安装到系统</button>
-            <p style="font-size: smaller; color: gray; margin: 0%">
-                <span style="font-size: smaller">蓝牙检查：edge://bluetooth-internals/#adapter copyright (c) 2024 etmedia, licensed under MIT License</span>
-            </p>
         </div>
     </div>    
     <dialog id="dialog">
@@ -257,7 +254,7 @@
     function updateUi(stage) {
         const mainButton = document.getElementById("main-button");
         const sendButton = document.getElementById("send-button");
-        const deviceName = document.getElementById("device-name");
+        const deviceName = document.getElementById("device-name").textContent;
         const status = document.getElementById("status");
         const recvinfo = document.getElementById("recvinfo");
         switch (stage) {
@@ -265,7 +262,7 @@
                 mainButton.innerText = "请稍后";
                 mainButton.disabled = true;
                 sendButton.disabled = true;
-                deviceName.value = "已连接：" + bluetoothDevice.name;
+                document.getElementById("device-name").textContent = bluetoothDevice.name;
                 break;
             case "ok":
                 mainButton.innerText = "结束";
@@ -276,7 +273,7 @@
                 mainButton.innerText = "开启";
                 mainButton.disabled = false;
                 sendButton.disabled = false;
-                deviceName.value = "未连接";
+                document.getElementById("device-name").textContent = "未连接";
                 document.getElementById('tx-char-id').textContent = "";
                 document.getElementById('rx-char-id').textContent = "";
                 break;
@@ -339,7 +336,7 @@
             // log(utf8);
             await Characteristic.writeValue(payload);
         } catch (error) {
-            log('发送失败: ' + error);
+            log('发送失败: ' + error + '\n');
         }
     }
 
