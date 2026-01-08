@@ -32,39 +32,39 @@
         }
         .input-group {
             display: flex;
-            margin-bottom: 10px;
+            margin-bottom: 0;
             width: 100%;
         }
         .input-group input {
             flex: 1;
             padding: 10px;
-            font-size: 16px;
+            font-size: 10px;
             box-sizing: border-box;
             font-family: Consolas;
         }
         .input-group button {
             padding: 10px;
-            font-size: 16px;
+            font-size: 10px;
             box-sizing: border-box;
             font-family: Consolas;
         }
         .textarea-group {
             display: flex;
-            margin-bottom: 10px;
+            margin-bottom: 0;
             width: 100%;
         }
         .textarea-group textarea {
             flex: 1;
             padding: 10px;
-            font-size: 14px;
+            font-size: 10px;
             height: 110px;
             box-sizing: border-box;
             font-family: Consolas;
         }
         .textarea-group button {
             padding: 10px;
-            font-size: 16px;
-            margin-left: 10px;
+            font-size: 10px;
+            margin-left: 0;
             box-sizing: border-box;
             font-family: Consolas;
         }
@@ -72,15 +72,15 @@
             width: 100%;
             height: 150px;
             padding: 10px;
-            font-size: 14px;
-            margin-top: 10px;
+            font-size: 10px;
+            margin-top: 0;
             box-sizing: border-box;
             font-family: Consolas;
         }
 
         /* 日志显示字体略小 */
         #loginfo {
-            font-size: 12px;
+            font-size: 10px;
             font-family: Consolas;
         }
         @media (max-width: 400px) {
@@ -89,14 +89,14 @@
             }
             .textarea-group button {
                 margin-left: 0;
-                margin-top: 10px;
+                margin-top: 0;
             }
         }
         .misc {
             position: absolute;
             bottom: 0;
             left: 0;
-            margin: 10px;
+            margin: 0;
         }
     </style>
 </head>
@@ -110,29 +110,26 @@
             <button id="main-button" onclick="handleButtonClick()" style="width: 60px;">连接</button>
         </div>
         <div style="display: flex; align-items: center; justify-content: space-between;">
-            <label for="loginfo">接收</label>
+            <label for="loginfo" style="font-size:10px;">接收</label>
             <div style="display: flex; align-items: center; gap: 10px;">
-                <label style="font-size:14px; display:flex; align-items:center; gap:6px;">
+                <label style="font-size:10px; display:flex; align-items:center; gap:6px;">
                     <input type="checkbox" id="recv-hex-mode" /> HEX
                 </label>
-                <button onclick="clearLog()" style="width: 60px;">清除</button>
+                <button onclick="clearLog()" style="font-size:10px; width: 60px;">清除</button>
             </div>
         </div>
         <div id="loginfo" style="flex-grow: 1; width: 100%; overflow-y: auto; overflow-x: auto; white-space: pre; font-family: Consolas; font-size: 12px; background-color: #1e1e1e; color: #cccccc; margin-bottom: 10px;"></div>
         <div class="textarea-group" style="display: flex; flex-direction: column;">
-            <textarea id="send-text" placeholder="输入要发送的内容" style="background-color: #1e1e1e; color: #cccccc; font-family: Consolas; font-size: 12px;"></textarea>
+            <textarea id="send-text" placeholder="输入要发送的内容" style="background-color: #1e1e1e; color: #cccccc; font-family: Consolas; font-size: 10px;"></textarea>
             <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
-                <label style="font-size:14px; display:flex; align-items:center; gap:6px;">
+                <label style="font-size:10px; display:flex; align-items:center; gap:6px;">
                     <input type="checkbox" id="utf8-mode" /> HEX
                 </label>
-                <label style="font-size:14px; display:flex; align-items:center; gap:6px;">
+                <label style="font-size:10px; display:flex; align-items:center; gap:6px;">
                     <input type="checkbox" id="auto-newline" checked /> 发送回车换行
                 </label>
                 <button id="send-button" onclick="senddata()" disabled style="margin-left: auto; width: 60px;">发送</button>
             </div>
-        </div>
-        <div class="misc">
-            <button id="install-button" hidden>将蓝牙调试工具安装到系统</button>
         </div>
     </div>    
     <dialog id="dialog">
