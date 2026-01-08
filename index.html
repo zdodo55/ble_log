@@ -83,7 +83,7 @@
             font-size: 12px;
             font-family: Consolas;
         }
-        @media (max-width: 600px) {
+        @media (max-width: 500px) {
             .input-group, .textarea-group {
                 flex-direction: column;
             }
@@ -105,11 +105,8 @@
     <div class="container">
         <div class="input-group">
             <input type="text" id="device-filter" placeholder="名称过滤" value="Pet" style="flex: 0; margin-right: 10px; width: 100px;">
-            <div class="input-group" style="display: flex; flex-direction: column;">
-                <label style="flex: 1;">已连接: <span id="device-name"></span></label>
-                <label style="font-size: smaller; flex: 1;">T: <span id="tx-char-id"></span></label>
-                <label style="font-size: smaller; flex: 1;">R: <span id="rx-char-id"></span></label>
-            </div>
+            <!-- <label style="flex: 1;">已连接: <span id="device-name"></span></label> -->
+            <input type="text" id="device-name" placeholder="设备名称" readonly="" >
             <button id="main-button" onclick="handleButtonClick()" style="width: 60px;">连接</button>
         </div>
         <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -254,7 +251,8 @@
     function updateUi(stage) {
         const mainButton = document.getElementById("main-button");
         const sendButton = document.getElementById("send-button");
-        const deviceName = document.getElementById("device-name").textContent;
+        const deviceName = document.getElementById("device-name");
+        // const deviceName = document.getElementById("device-name").textContent;
         const status = document.getElementById("status");
         const recvinfo = document.getElementById("recvinfo");
         switch (stage) {
@@ -262,7 +260,8 @@
                 mainButton.innerText = "请稍后";
                 mainButton.disabled = true;
                 sendButton.disabled = true;
-                document.getElementById("device-name").textContent = bluetoothDevice.name;
+                deviceName.value = "已连接：" + bluetoothDevice.name;
+                // document.getElementById("device-name").textContent = bluetoothDevice.name;
                 break;
             case "ok":
                 mainButton.innerText = "结束";
@@ -273,9 +272,8 @@
                 mainButton.innerText = "开启";
                 mainButton.disabled = false;
                 sendButton.disabled = false;
-                document.getElementById("device-name").textContent = "未连接";
-                document.getElementById('tx-char-id').textContent = "";
-                document.getElementById('rx-char-id').textContent = "";
+                deviceName.value = "未连接";
+                // document.getElementById("device-name").textContent = "未连接";
                 break;
         }
     }
@@ -398,8 +396,10 @@
             CharacteristicRx.addEventListener("characteristicvaluechanged", handleRxdNotifications);
             // // 写入字节(括号中的方法为把字符串转为字符流,传输给蓝牙)
             // await Characteristic.writeValue(makePayload(bluetoothDevice.name));
-            document.getElementById('tx-char-id').textContent = Characteristic.uuid;
-            document.getElementById('rx-char-id').textContent = CharacteristicRx.uuid;
+            log(`已连接到设备: ${bluetoothDevice.name}\n` );
+            log(`使用服务: ${service.uuid}\n`);
+            log(`发送特征: ${Characteristic.uuid}\n`);
+            log(`接收特征: ${CharacteristicRx.uuid}\n`);
             isStarted = true;
             updateUi("ok");
         } catch (error) {
