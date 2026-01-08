@@ -32,7 +32,7 @@
         }
         .input-group {
             display: flex;
-            margin-bottom: 0;
+            margin-bottom: 5px;
             width: 100%;
         }
         .input-group input {
@@ -43,7 +43,6 @@
             font-family: Consolas;
         }
         .input-group button {
-            padding: 10px;
             font-size: 10px;
             box-sizing: border-box;
             font-family: Consolas;
@@ -62,7 +61,6 @@
             font-family: Consolas;
         }
         .textarea-group button {
-            padding: 10px;
             font-size: 10px;
             margin-left: 0;
             box-sizing: border-box;
@@ -104,10 +102,10 @@
 <body>
     <div class="container">
         <div class="input-group">
-            <input type="text" id="device-filter" placeholder="名称过滤" value="Pet" style="flex: 0; margin-right: 10px; width: 100px;">
+            <input type="text" id="device-filter" placeholder="名称过滤" value="Pet" style="flex: 0; margin-right: 10px; height: 20px; width: 100px;">
             <!-- <label style="flex: 1;">已连接: <span id="device-name"></span></label> -->
-            <input type="text" id="device-name" placeholder="设备名称" readonly="" >
-            <button id="main-button" onclick="handleButtonClick()" style="width: 60px;">连接</button>
+            <input type="text" id="device-name" placeholder="设备名称" style="margin-right: 10px; height: 20px;" readonly="">
+            <button id="main-button" onclick="handleButtonClick()" style="height: 24px; width: 60px;">连接</button>
         </div>
         <div style="display: flex; align-items: center; justify-content: space-between;">
             <label for="loginfo" style="font-size:10px;">接收</label>
@@ -128,7 +126,7 @@
                 <label style="font-size:10px; display:flex; align-items:center; gap:6px;">
                     <input type="checkbox" id="auto-newline" checked /> 发送回车换行
                 </label>
-                <button id="send-button" onclick="senddata()" disabled style="margin-left: auto; width: 60px;">发送</button>
+                <button id="send-button" onclick="senddata()" disabled style="margin-left: auto; height: 24px; width: 60px;">发送</button>
             </div>
         </div>
     </div>    
