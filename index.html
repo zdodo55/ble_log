@@ -79,7 +79,7 @@
         /* 日志显示字体略小 */
         #loginfo {
             font-size: 10px;
-            font-family: Consolas;
+            font-family: Courier New, monospace;
         }
         @media (max-width: 200px) {
             .input-group, .textarea-group {
@@ -102,9 +102,9 @@
 <body>
     <div class="container">
         <div class="input-group">
-            <input type="text" id="device-filter" placeholder="名称过滤" value="Pet" style="flex: 0; margin-right: 10px; height: 20px; width: 100px;">
+            <input type="text" id="device-filter" placeholder="名称过滤" value="Pet" style="flex: 0; margin-right: 5px; height: 20px; width: 100px;">
             <!-- <label style="flex: 1;">已连接: <span id="device-name"></span></label> -->
-            <input type="text" id="device-name" placeholder="设备名称" style="margin-right: 10px; height: 20px;" readonly="">
+            <input type="text" id="device-name" placeholder="未连接" style="margin-right: 5px; height: 20px;" readonly="">
             <button id="main-button" onclick="handleButtonClick()" style="height: 24px; width: 60px;">连接</button>
         </div>
         <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -252,19 +252,19 @@
         const recvinfo = document.getElementById("recvinfo");
         switch (stage) {
             case "pending":
-                mainButton.innerText = "请稍后";
+                mainButton.innerText = "连接...";
                 mainButton.disabled = true;
                 sendButton.disabled = true;
                 deviceName.value = "已连接：" + bluetoothDevice.name;
                 // document.getElementById("device-name").textContent = bluetoothDevice.name;
                 break;
             case "ok":
-                mainButton.innerText = "结束";
+                mainButton.innerText = "断开";
                 mainButton.disabled = false;
                 sendButton.disabled = false;
                 break;
             case "standby":
-                mainButton.innerText = "开启";
+                mainButton.innerText = "连接";
                 mainButton.disabled = false;
                 sendButton.disabled = false;
                 deviceName.value = "未连接";
