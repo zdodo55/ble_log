@@ -341,7 +341,7 @@
         }
     }
 
-    async function reconnect() {
+    async function reconnect(maxRetries = 5, baseDelay = 1000) {
         if (!bluetoothDevice) {
             log("无法重新连接，因为没有已连接的设备\n");
             return;
@@ -350,50 +350,38 @@
         log("正在重新连接...\n");
         updateUi("reconnecting");
 
+        let retries = 0;
+        let delay = baseDelay;
+        while (retries < maxRetries) {
+            try {
+                await new Promise(resolve => setTimeout(resolve, delay));
+                await handleConnect();
+                log('重连成功');
+                return;
+            } catch (error) {
+            retries++;
+            if (retries >= maxRetries) {
+                log('重连失败');
+                updateUi("disconnected");
+                break;
+            }
+            delay *= 2;
+            }
+        }
     }
-
     // 处理蓝牙设备断开连接事件
     function handleDeviceDisconnected(event) {
         log("********************\n");
         log("***设备连接已断开****\n");
         log("********************\n");
         isStarted = false;
-        updateUi("disconnected");
-        
-        // 如果启用了自动重连且未达到最大重连次数，则开始重连
+        updateUi("reconnecting");
+        reconnect();
     }
 
-    async function senddata() {
+    async function handleConnect()
+    {
         try {
-            const payload = makePayload();
-            // const hex = bufferToHexString(payload);
-            // let utf8 = '';
-            // try { utf8 = new TextDecoder().decode(payload); } catch(e) { utf8 = '[无法以 UTF-8 解码]'; }
-            // log(utf8);
-            await Characteristic.writeValue(payload);
-        } catch (error) {
-            log('发送失败: ' + error + '\n');
-        }
-    }
-
-    async function start() {
-        log('开始连接...\n');
-        try {
-            const filterValue = document.getElementById('device-filter').value.trim();
-            const options = {
-                optionalServices: ['0000d0d0-0000-1000-8000-00805f9b34fb', '6e400001-b5a3-f393-e0a9-e50e24dcca9e']
-            };
-            if (filterValue) {
-                options.filters = [{ namePrefix: filterValue }];
-            } else {
-                options.acceptAllDevices = true;
-            }
-            bluetoothDevice = await navigator.bluetooth.requestDevice(options);
-            updateUi("pending");
-            
-            // 注册断开连接事件监听器
-            bluetoothDevice.addEventListener('gattserverdisconnected', handleDeviceDisconnected);
-            
             const server = await bluetoothDevice.gatt.connect();
             const services = await server.getPrimaryServices();
             if(services.length == 0){
@@ -445,9 +433,43 @@
             log(`接收特征: ${CharacteristicRx.uuid}\n`);
             isStarted = true;
             updateUi("ok");
+
         } catch (error) {
             handleBluetoothError(error);
         }
+    }
+
+    async function senddata() {
+        try {
+            const payload = makePayload();
+            // const hex = bufferToHexString(payload);
+            // let utf8 = '';
+            // try { utf8 = new TextDecoder().decode(payload); } catch(e) { utf8 = '[无法以 UTF-8 解码]'; }
+            // log(utf8);
+            await Characteristic.writeValue(payload);
+        } catch (error) {
+            log('发送失败: ' + error + '\n');
+        }
+    }
+
+    async function start() {
+        log('开始连接...\n');
+        const filterValue = document.getElementById('device-filter').value.trim();
+        const options = {
+            optionalServices: ['0000d0d0-0000-1000-8000-00805f9b34fb', '6e400001-b5a3-f393-e0a9-e50e24dcca9e']
+        };
+        if (filterValue) {
+            options.filters = [{ namePrefix: filterValue }];
+        } else {
+            options.acceptAllDevices = true;
+        }
+        bluetoothDevice = await navigator.bluetooth.requestDevice(options);
+        updateUi("pending");
+        
+        // 注册断开连接事件监听器
+        bluetoothDevice.addEventListener('gattserverdisconnected', handleDeviceDisconnected);
+
+        await handleConnect();
     }
 
     async function end() {
