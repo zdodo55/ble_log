@@ -111,6 +111,7 @@
             <label for="loginfo" style="font-size:10px;">接收</label>
             <div style="display: flex; align-items: center; gap: 10px;">
                 <label style="font-size:10px; display:flex; align-items:center; gap:6px;">
+                    <input type="checkbox" id="auto-reconnect" checked /> 自动重连
                     <input type="checkbox" id="recv-hex-mode" /> HEX
                 </label>
                 <button onclick="clearLog()" style="font-size:10px; width: 60px;">清除</button>
@@ -118,7 +119,7 @@
         </div>
         <div id="loginfo" style="flex-grow: 1; width: 100%; overflow-y: auto; overflow-x: auto; white-space: pre; font-family: Consolas, 'Roboto Mono'; font-size: 12px; background-color: #1e1e1e; color: #cccccc; margin-bottom: 10px;"></div>
         <div class="textarea-group" style="display: flex; flex-direction: column;">
-            <textarea id="send-text" placeholder="输入要发送的内容" style="background-color: #1e1e1e; color: #cccccc; font-family: Consolas; font-size: 10px;"></textarea>
+            <textarea id="send-text" placeholder="输入要发送的内容" style="background-color: #1e1e1e; color: #cccccc; font-family: Consolas; font-size: 12px;"></textarea>
             <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
                 <label style="font-size:10px; display:flex; align-items:center; gap:6px;">
                     <input type="checkbox" id="utf8-mode" /> HEX
@@ -242,6 +243,13 @@
     let Characteristic;
     let CharacteristicRx;
     let isStarted = false;
+    
+    // 添加自动重连相关变量
+    let autoReconnect = false;
+    let reconnectInterval = null;
+    let reconnectAttempts = 0;
+    const maxReconnectAttempts = 5; // 最大重连次数
+    const reconnectDelay = 3000; // 重连延迟（毫秒）
 
     function updateUi(stage) {
         const mainButton = document.getElementById("main-button");
@@ -255,13 +263,14 @@
                 mainButton.innerText = "连接...";
                 mainButton.disabled = true;
                 sendButton.disabled = true;
-                deviceName.value = "已连接：" + bluetoothDevice.name;
+                deviceName.value = "连接..." + bluetoothDevice.name;
                 // document.getElementById("device-name").textContent = bluetoothDevice.name;
                 break;
             case "ok":
                 mainButton.innerText = "断开";
                 mainButton.disabled = false;
                 sendButton.disabled = false;
+                deviceName.value = "已连接：" + bluetoothDevice.name;
                 break;
             case "standby":
                 mainButton.innerText = "连接";
@@ -269,6 +278,18 @@
                 sendButton.disabled = false;
                 deviceName.value = "未连接";
                 // document.getElementById("device-name").textContent = "未连接";
+                break;
+            case "disconnected":
+                mainButton.innerText = "连接";
+                mainButton.disabled = false;
+                sendButton.disabled = true;
+                deviceName.value = "已断开："  + bluetoothDevice.name;
+                break;
+            case "reconnecting":
+                mainButton.innerText = "重连...";
+                mainButton.disabled = true;
+                sendButton.disabled = true;
+                deviceName.value = "重连..."  + bluetoothDevice.name;
                 break;
         }
     }
@@ -320,6 +341,28 @@
         }
     }
 
+    async function reconnect() {
+        if (!bluetoothDevice) {
+            log("无法重新连接，因为没有已连接的设备\n");
+            return;
+        }
+
+        log("正在重新连接...\n");
+        updateUi("reconnecting");
+
+    }
+
+    // 处理蓝牙设备断开连接事件
+    function handleDeviceDisconnected(event) {
+        log("********************\n");
+        log("***设备连接已断开****\n");
+        log("********************\n");
+        isStarted = false;
+        updateUi("disconnected");
+        
+        // 如果启用了自动重连且未达到最大重连次数，则开始重连
+    }
+
     async function senddata() {
         try {
             const payload = makePayload();
@@ -334,6 +377,7 @@
     }
 
     async function start() {
+        log('开始连接...\n');
         try {
             const filterValue = document.getElementById('device-filter').value.trim();
             const options = {
@@ -346,6 +390,10 @@
             }
             bluetoothDevice = await navigator.bluetooth.requestDevice(options);
             updateUi("pending");
+            
+            // 注册断开连接事件监听器
+            bluetoothDevice.addEventListener('gattserverdisconnected', handleDeviceDisconnected);
+            
             const server = await bluetoothDevice.gatt.connect();
             const services = await server.getPrimaryServices();
             if(services.length == 0){
@@ -404,18 +452,43 @@
 
     async function end() {
         try {
-            // const endPayload = new Uint8Array([0xFE, 0xFE, 0x09, 0xB3, 0x00, 0x00])
-            // await txdCharacteristic.writeValue(endPayload)
-            await bluetoothDevice.gatt.disconnect();
+            if (bluetoothDevice && bluetoothDevice.gatt.connected) {
+                // 移除断开连接事件监听器
+                bluetoothDevice.removeEventListener('gattserverdisconnected', handleDeviceDisconnected);
+                
+                // 停止通知
+                if (CharacteristicRx) {
+                    await CharacteristicRx.stopNotifications();
+                    CharacteristicRx.removeEventListener("characteristicvaluechanged", handleRxdNotifications);
+                }
+                
+                // 断开GATT连接
+                await bluetoothDevice.gatt.disconnect();
+            }
             isStarted = false;
-            updateUi("standby");
+            updateUi("disconnected");
         } catch (error) {
             handleBluetoothError(error);
         }
     }
 
     function handleButtonClick() {
-        isStarted ? end() : start();
+        // 检查是否需要启用自动重连
+        autoReconnect = document.getElementById('auto-reconnect').checked;
+        
+        if (isStarted) {
+            // 断开连接时取消自动重连
+            autoReconnect = false;
+            if (reconnectInterval) {
+                clearTimeout(reconnectInterval);
+                reconnectInterval = null;
+            }
+            end();
+        } else {
+            // 重置重连计数器
+            reconnectAttempts = 0;
+            start();
+        }
     }
 
     // 添加键盘事件监听器到发送窗口
