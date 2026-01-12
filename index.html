@@ -356,24 +356,22 @@
             try {
                 await new Promise(resolve => setTimeout(resolve, delay));
                 await handleConnect();
-                log('重连成功');
+                log("\n********重连成功********\n\n");
                 return;
             } catch (error) {
-            retries++;
-            if (retries >= maxRetries) {
-                log('重连失败');
-                updateUi("disconnected");
-                break;
-            }
-            delay *= 2;
+                retries++;
+                if (retries >= maxRetries) {
+                    log("\n********重连失败********\n\n");
+                    updateUi("disconnected");
+                    break;
+                }
+                delay *= 2;
             }
         }
     }
     // 处理蓝牙设备断开连接事件
     function handleDeviceDisconnected(event) {
-        log("********************\n");
-        log("***设备连接已断开****\n");
-        log("********************\n");
+        log("\n*****设备连接已断开*****\n\n");
         isStarted = false;
         updateUi("reconnecting");
         reconnect();
