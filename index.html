@@ -106,7 +106,8 @@
             <button id="main-button" onclick="handleButtonClick()" style="height: 24px; width: 60px;">连接</button>
         </div>
         <div style="display: flex; align-items: center; justify-content: space-between;">
-            <label for="loginfo" style="font-size:10px;">接收</label>
+            <!-- <label for="loginfo" style="font-size:10px;">接收: </label> -->
+            <span id="byte-count" style="font-size:10px;">接收: 0 </span>
             <div style="display: flex; align-items: center; gap: 5px;">
                 <label style="font-size:10px; display:flex; align-items:center;">
                     <input type="checkbox" id="recv-hex-mode" /> HEX
@@ -117,7 +118,7 @@
                 <button onclick="clearLog()" style="font-size:10px; width: 60px;">清除</button>
             </div>
         </div>
-        <div id="loginfo" style="flex-grow: 1; width: 100%; overflow-y: auto; overflow-x: auto; white-space: pre; font-family: Consolas, 'Roboto Mono'; font-size: 12px; background-color: #1e1e1e; color: #cccccc; margin-bottom: 10px;"></div>
+        <div id="loginfo" style="flex-grow: 1; width: 100%; overflow-y: auto; overflow-x: auto; white-space: pre; font-family: Consolas, 'Roboto Mono'; font-size: 12px; background-color: #1e1e1e; color: #cccccc; margin-bottom: 5px;"></div>
         <div class="textarea-group" style="display: flex; margin-bottom: 10px;">
             <input type="text" id="send-text" placeholder="输入要发送的内容" style="height: 20px; background-color: #1e1e1e; color: #cccccc; font-family: Consolas; font-size: 12px;"></input>
             <div style="display: flex; align-items: center; gap: 5px;">
@@ -145,7 +146,10 @@
 <script>
     function clearLog() {
         document.getElementById('loginfo').innerHTML = '';
+        receivedBytes = 0;
+        updateByteCount();
     }
+
     function makePayload() {
         const text = document.getElementById('send-text').value;
         const isHex = document.getElementById('utf8-mode').checked;
@@ -234,8 +238,17 @@
         const logInfo = document.getElementById("loginfo");
         // 解析ANSI转义序列并转换为HTML
         const htmlMessage = ansiToHtml(message);
-        // 追加HTML消息并自动滚动到底部
+        // 追加HTML消息
         logInfo.innerHTML += htmlMessage;
+        
+        // 自动清除部分最前面的数据（限制最大字符数为10000）
+        const maxLength = 10000;
+        if (logInfo.innerHTML.length > maxLength) {
+            // 保留最新的8000个字符
+            // logInfo.innerHTML = logInfo.innerHTML.slice(-8000);
+        }
+        
+        // 自动滚动到底部
         try { logInfo.scrollTop = logInfo.scrollHeight; } catch (e) { /* ignore */ }
     }
 
@@ -243,6 +256,7 @@
     let Characteristic;
     let CharacteristicRx;
     let isStarted = false;
+    let receivedBytes = 0;
     
     // 添加自动重连相关变量
     let autoReconnect = false;
@@ -325,6 +339,11 @@
         const value = event.target.value;
         const bytes = new Uint8Array(value.buffer);
         const isHex = document.getElementById('recv-hex-mode').checked;
+        
+        // 更新接收字节数
+        receivedBytes += bytes.length;
+        updateByteCount();
+        
         if (isHex) {
             const hex = bufferToHexString(bytes);
             log(hex + '\n');
@@ -528,6 +547,12 @@
             }
         }
     });
+    function updateByteCount() {
+        const byteCountElement = document.getElementById('byte-count');
+        if (byteCountElement) {
+            byteCountElement.textContent = `接收: ${receivedBytes}`;
+        }
+    }
 </script>
 
 </html>
