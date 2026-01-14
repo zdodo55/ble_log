@@ -78,7 +78,7 @@
         /* 日志显示字体略小 */
         #loginfo {
             font-size: 10px;
-            font-family: 'Roboto Mono', Consolas;
+            font-family: Consolas, 'Roboto Mono';
         }
         @media (max-width: 200px) {
             .input-group, .textarea-group {
@@ -556,6 +556,29 @@
             byteCountElement.textContent = `接收: ${receivedBytes}`;
         }
     }
+    
+    // 检测是否为移动设备
+    function isMobileDevice() {
+        return (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1);
+    }
+    
+    // 设置接收窗口字体大小
+    function setLogFontSize() {
+        const logInfo = document.getElementById('loginfo');
+        if (logInfo) {
+            if (isMobileDevice()) {
+                logInfo.style.fontSize = '10px';
+            } else {
+                logInfo.style.fontSize = '12px';
+            }
+        }
+    }
+    
+    // 页面加载完成后设置字体大小
+    window.addEventListener('load', setLogFontSize);
+    
+    // 窗口大小变化时重新设置字体大小，以适应响应式布局
+    window.addEventListener('resize', setLogFontSize);
 </script>
 
 </html>
