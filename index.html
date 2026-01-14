@@ -406,6 +406,9 @@
             // 优先使用特定服务UUID
             let service = services.find(s => s.uuid.toLowerCase() === '0000d0d0-0000-1000-8000-00805f9b34fb');
             if (!service) {
+                service = services.find(s => s.uuid.toLowerCase() === '6e400001-b5a3-f393-e0a9-e50e24dcca9e');
+            }
+            if (!service) {
                 service = services[0];
             }
             // console.log(`service`, service.uuid);
