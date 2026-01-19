@@ -1,583 +1,711 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-
 <head>
-    <meta charset="utf-8" />
-    <link rel="icon" href="favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="BLE蓝牙调试工具" />
-    <meta name="theme-color" content="#fafafa" />
-    <link rel="apple-touch-icon" href="logo192.png" />
-    <link rel="manifest" href="manifest.json" />
-    <link rel="stylesheet" href="light.min.css"> <!-- https://watercss.kognise.dev/ -->
-    <title>BLE蓝牙调试工具</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>蓝牙串口调试工具</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
+            font-family: Arial, sans-serif;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            margin: 0;
-            padding: 5px;
-            font-family: Arial, sans-serif;
-            width: 100%;
-            height: 100vh;
-            box-sizing: border-box;
-            font-family: Consolas;
+            font-size: 12px;
         }
+
+        /* 全局字体大小统一 */
+        input, button, label, span, div {
+            font-size: 12px !important;
+        }
+
         .container {
             display: flex;
             flex-direction: column;
-            width: 100%;
-            height: 100%;
-        }
-        .input-group {
-            display: flex;
-            margin-bottom: 5px;
-            width: 100%;
-        }
-        .input-group input {
-            flex: 1;
-            padding: 10px;
-            font-size: 10px;
-            box-sizing: border-box;
-            font-family: Consolas;
-        }
-        .input-group button {
-            font-size: 10px;
-            box-sizing: border-box;
-            font-family: Consolas;
-        }
-        .textarea-group {
-            display: flex;
-            margin-bottom: 0;
-            width: 100%;
-        }
-        .textarea-group input {
-            flex: 1;
-            padding: 10px;
-            font-size: 10px;
-            box-sizing: border-box;
-            font-family: Consolas;
-        }
-        .textarea-group button {
-            font-size: 10px;
-            margin-left: 0;
-            box-sizing: border-box;
-            font-family: Consolas;
-        }
-        #recvinfo {
-            width: 100%;
-            height: 150px;
-            padding: 10px;
-            font-size: 10px;
-            margin-top: 0;
-            box-sizing: border-box;
-            font-family: Consolas;
+            height: 100vh;
+            padding: 5px;
         }
 
-        /* 日志显示字体略小 */
-        #loginfo {
-            font-size: 10px;
-            font-family: Consolas, 'Roboto Mono';
+        /* 顶部连接区域 */
+        .connection-panel {
+            background-color: #2d2d30;
+            /* padding: 5px; */
+            border-radius: 5px;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex-wrap: wrap;
+            justify-content: space-between;
         }
-        @media (max-width: 200px) {
-            .input-group, .textarea-group {
-                flex-direction: column;
+
+        .connection-left {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex: 1;
+        }
+
+        .connection-left input{
+            width: 100px;
+        }
+
+        .connection-right {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .connection-panel input {
+            padding: 5px 5px;
+            border: 1px solid #3c3c3c;
+            border-radius: 3px;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            font-size: 12px;
+        }
+
+        .connection-panel button {
+            padding: 5px 15px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background-color 0.3s;
+        }
+
+        .connect-btn {
+            background-color: #0e639c;
+            color: white;
+        }
+
+        .connect-btn:hover {
+            background-color: #1177bb;
+        }
+
+        .connect-btn:disabled {
+            background-color: #3c3c3c;
+            cursor: not-allowed;
+        }
+
+        .disconnect-btn {
+            background-color: #e74c3c;
+            color: white;
+        }
+
+        .disconnect-btn:hover {
+            background-color: #c0392b;
+        }
+
+        .status-info {
+            color: #4ec9b0;
+            font-size: 12px;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .checkbox-container input[type="checkbox"] {
+            width: 12px;
+            height: 12px;
+        }
+
+        /* 中间接收区域 */
+        .receive-panel {
+            flex: 1;
+            background-color: #2d2d30;
+            border-radius: 5px;
+            margin-bottom: 5px;
+            display: flex;
+            flex-direction: column;
+            min-height: 200px;
+        }
+
+        .receive-header {
+            /* padding: 5px; */
+            border-bottom: 1px solid #3c3c3c;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .receive-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .receive-output {
+            flex: 1;
+            padding: 5px;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+            /* line-height: 1.4; */
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            white-space: pre;
+            overflow-x: auto;
+            word-break: normal;
+        }
+
+        .receive-output::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .receive-output::-webkit-scrollbar-track {
+            background: #2d2d30;
+        }
+
+        .receive-output::-webkit-scrollbar-thumb {
+            background: #6b6b6b;
+            border-radius: 4px;
+        }
+
+        .receive-output::-webkit-scrollbar-thumb:hover {
+            background: #8b8b8b;
+        }
+
+        .clear-btn {
+            padding: 5px 15px;
+            background-color: #6b6b6b;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .clear-btn:hover {
+            background-color: #8b8b8b;
+        }
+
+        /* 底部发送区域 */
+        .send-panel {
+            background-color: #2d2d30;
+            /* padding: 5px; */
+            border-radius: 5px;
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .send-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #3c3c3c;
+            border-radius: 3px;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            font-size: 12px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+        }
+
+        .send-btn {
+            padding: 8px 20px;
+            background-color: #0e639c;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background-color 0.3s;
+        }
+
+        .send-btn:hover:not(:disabled) {
+            background-color: #1177bb;
+        }
+
+        .send-btn:disabled {
+            background-color: #3c3c3c;
+            cursor: not-allowed;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 600px) {
+            .container {
+                padding: 5px;
             }
-            .textarea-group button {
-                margin-left: 0;
-                margin-top: 0;
+            
+            .connection-panel {
+                padding: 8px;
+                gap: 8px;
+            }
+            
+            .connection-panel input {
+                font-size: 12px;
+                padding: 4px 8px;
+            }
+            
+            .connection-panel button {
+                font-size: 12px;
+                padding: 4px 12px;
+            }
+            
+            .receive-output {
+                font-size: 12px;
+                padding: 8px;
+            }
+            
+            .send-panel {
+                padding: 8px;
+                gap: 8px;
+            }
+            
+            .send-input {
+                font-size: 12px;
+                padding: 6px 5px;
+            }
+            
+            .send-btn {
+                font-size: 12px;
+                padding: 6px 12px;
             }
         }
-        .misc {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            margin: 0;
+
+        /* Web端样式 - 当屏幕宽度较大时使用更小的字体 */
+        @media (min-width: 601px) {
+            .receive-output {
+                font-size: 10px;
+            }
         }
+        
+        /* 颜色转义字符样式 */
+        .ansi-bold { font-weight: bold; }
+        .ansi-black { color: black; }
+        .ansi-red { color: red; }
+        .ansi-green { color: green; }
+        .ansi-yellow { color: yellow; }
+        .ansi-blue { color: blue; }
+        .ansi-magenta { color: magenta; }
+        .ansi-cyan { color: cyan; }
+        .ansi-white { color: white; }
+        
+        .ansi-bg-black { background-color: black; }
+        .ansi-bg-red { background-color: red; }
+        .ansi-bg-green { background-color: green; }
+        .ansi-bg-yellow { background-color: yellow; }
+        .ansi-bg-blue { background-color: blue; }
+        .ansi-bg-magenta { background-color: magenta; }
+        .ansi-bg-cyan { background-color: cyan; }
+        .ansi-bg-white { background-color: white; }
     </style>
 </head>
-
 <body>
     <div class="container">
-        <div class="input-group">
-            <input type="text" id="device-filter" placeholder="名称过滤" value="Pet" style="flex: 0; margin-right: 5px; height: 20px; width: 100px;">
-            <input type="text" id="device-name" placeholder="未连接" style="margin-right: 5px; height: 20px;" readonly="">
-            <button id="main-button" onclick="handleButtonClick()" style="height: 24px; width: 60px;">连接</button>
-        </div>
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-            <!-- <label for="loginfo" style="font-size:10px;">接收: </label> -->
-            <span id="byte-count" style="font-size:10px;">接收: 0 </span>
-            <div style="display: flex; align-items: center; gap: 5px;">
-                <label style="font-size:10px; display:flex; align-items:center;">
-                    <input type="checkbox" id="recv-hex-mode" /> HEX
-                </label>
-                <label style="font-size:10px; display:flex; align-items:center;">
-                    <input type="checkbox" id="auto-reconnect" checked /> 自动重连
-                </label>
-                <button onclick="clearLog()" style="font-size:10px; width: 60px;">清除</button>
+        <!-- 连接区域 -->
+        <div class="connection-panel">
+            <div class="connection-left">
+                <label>过滤:</label>
+                <input type="text" id="deviceNameFilter" placeholder="蓝牙名称过滤" value="Pet_">
+                <div class="status-info">
+                    <span id="connectionStatus">未连接</span>
+                    <span id="connectedDevice"></span>
+                </div>
+            </div>
+            <div class="connection-right">
+                <div class="checkbox-container">
+                    <input type="checkbox" id="autoReconnect" checked>
+                    <label for="autoReconnect">自动重连</label>
+                </div>
+                <button id="connectBtn" class="connect-btn">连接</button>
+                <button id="disconnectBtn" class="disconnect-btn" style="display: none;">断开</button>
             </div>
         </div>
-        <div id="loginfo" style="flex-grow: 1; width: 100%; overflow-y: auto; overflow-x: auto; white-space: pre; font-family: Consolas, 'Roboto Mono'; font-size: 12px; background-color: #1e1e1e; color: #cccccc; margin-bottom: 5px;"></div>
-        <div class="textarea-group" style="display: flex; margin-bottom: 10px;">
-            <input type="text" id="send-text" placeholder="输入要发送的内容" style="height: 20px; background-color: #1e1e1e; color: #cccccc; font-family: Consolas; font-size: 12px;"></input>
-            <div style="display: flex; align-items: center; gap: 5px;">
-                <label style="font-size:10px; display:flex; align-items:center;">
-                    <input type="checkbox" id="utf8-mode" /> HEX
-                </label>
-                <label style="font-size:10px; display:flex; align-items:center;">
-                    <input type="checkbox" id="auto-newline" checked /> 发送换行
-                </label>
-                <button id="send-button" onclick="senddata()" disabled style="margin-left: auto; height: 24px; width: 60px;">发送</button>
+
+        <!-- 接收区域 -->
+        <div class="receive-panel">
+            <div class="receive-header">
+                <span id="receivedBytes">接收: 0</span>
+                <div class="receive-controls">
+                    <div class="checkbox-container">
+                        <input type="checkbox" id="hexDisplay">
+                        <label for="hexDisplay">HEX</label>
+                    </div>
+                    <button id="clearBtn" class="clear-btn">清除</button>
+                </div>
             </div>
+            <div id="receiveOutput" class="receive-output"></div>
         </div>
-    </div>    
-    <dialog id="dialog">
-        <header>出现错误</header>
-        <form method="dialog">
-            <p id="dialog-content"></p>
-            <menu style="display: flex; justify-content: flex-end;">
-                <button onclick="succeeded = false">好</button>
-            </menu>
-        </form>
-    </dialog>
+
+        <!-- 发送区域 -->
+        <div class="send-panel">
+            <input type="text" id="sendInput" class="send-input" placeholder="输入要发送的数据...">
+            <div class="checkbox-container">
+                <input type="checkbox" id="hexSend">
+                <label for="hexSend">HEX</label>
+            </div>
+            <div class="checkbox-container">
+                <input type="checkbox" id="sendNewline" checked>
+                <label for="sendNewline">发送换行</label>
+            </div>
+            <button id="sendBtn" class="send-btn" disabled>发送</button>
+        </div>
+    </div>
+
+    <!-- <script src="bluetooth.js"></script> -->
 </body>
 
 <script>
-    function clearLog() {
-        document.getElementById('loginfo').innerHTML = '';
-        receivedBytes = 0;
-        updateByteCount();
-    }
-
-    function makePayload() {
-        const text = document.getElementById('send-text').value;
-        const isHex = document.getElementById('utf8-mode').checked;
-        const autoNewline = document.getElementById('auto-newline') && document.getElementById('auto-newline').checked;
-        if (!isHex) {
-            const t = autoNewline ? (text + '\n') : text;
-            return new TextEncoder().encode(t);
-        }
-        const cleanedText = text.replace(/\s+/g, '');
-        const uint8Array = new Uint8Array(cleanedText.length / 2);
-        for (let i = 0; i < cleanedText.length; i += 2) {
-            uint8Array[i / 2] = parseInt(cleanedText.substr(i, 2), 16);
-        }
-        if (autoNewline) {
-            const out = new Uint8Array(uint8Array.length + 1);
-            out.set(uint8Array, 0);
-            out[out.length - 1] = 0x0A; // LF
-            return out;
-        }
-        return uint8Array;
-    }
-
-    function ansiToHtml(text) {
-        // ANSI颜色代码映射
-        const colors = {
-            30: 'black', 31: 'red', 32: 'green', 33: 'yellow',
-            34: 'blue', 35: 'magenta', 36: 'cyan', 37: 'white'
-        };
-        const bgColors = {
-            40: 'black', 41: 'red', 42: 'green', 43: 'yellow',
-            44: 'blue', 45: 'magenta', 46: 'cyan', 47: 'white'
-        };
-
-        let result = '';
-        let currentStyle = {};
-        let i = 0;
-
-        while (i < text.length) {
-            if (text.substr(i, 2) === '\x1b[') {
-                // 找到转义序列开始
-                let j = i + 2;
-                let codeStr = '';
-                while (j < text.length && text[j] !== 'm') {
-                    codeStr += text[j];
-                    j++;
+    // 蓝牙串口调试工具主程序
+    class BluetoothSerialDebugger {
+        constructor() {
+            this.device = null;
+            this.server = null;
+            this.receiveCharacteristic = null;
+            this.sendCharacteristic = null;
+            this.isConnected = false;
+            this.receivedBytes = 0;
+            this.autoReconnectEnabled = false;
+            this.reconnectTimer = null;
+            
+            // 服务UUID配置
+            this.services = [
+                {
+                    uuid: '0000d0d0-0000-1000-8000-00805f9b34fb',
+                    sendCharUuid: '0000d0d1-0000-1000-8000-00805f9b34fb',
+                    receiveCharUuid: '0000d0d2-0000-1000-8000-00805f9b34fb'
+                },
+                {
+                    uuid: '6e400001-b5a3-f393-e0a9-e50e24dcca9e',
+                    sendCharUuid: '6e400002-b5a3-f393-e0a9-e50e24dcca9e',
+                    receiveCharUuid: '6e400005-b5a3-f393-e0a9-e50e24dcca9e'
                 }
-                if (text[j] === 'm') {
-                    // 解析代码
-                    const codes = codeStr.split(';').map(c => parseInt(c));
-                    codes.forEach(code => {
-                        if (code === 0) {
-                            // 重置
-                            currentStyle = {};
-                        } else if (code === 1) {
-                            currentStyle.bold = true;
-                        } else if (code >= 30 && code <= 37) {
-                            currentStyle.color = colors[code];
-                        } else if (code >= 40 && code <= 47) {
-                            currentStyle.backgroundColor = bgColors[code];
-                        }
-                    });
-                    i = j + 1;
-                } else {
-                    // 无效序列，跳过
-                    i++;
+            ];
+            
+            this.initElements();
+            this.bindEvents();
+        }
+        
+        initElements() {
+            this.elements = {
+                deviceNameFilter: document.getElementById('deviceNameFilter'),
+                connectionStatus: document.getElementById('connectionStatus'),
+                connectedDevice: document.getElementById('connectedDevice'),
+                autoReconnect: document.getElementById('autoReconnect'),
+                connectBtn: document.getElementById('connectBtn'),
+                disconnectBtn: document.getElementById('disconnectBtn'),
+                receiveOutput: document.getElementById('receiveOutput'),
+                hexDisplay: document.getElementById('hexDisplay'),
+                receivedBytes: document.getElementById('receivedBytes'),
+                clearBtn: document.getElementById('clearBtn'),
+                sendInput: document.getElementById('sendInput'),
+                hexSend: document.getElementById('hexSend'),
+                sendNewline: document.getElementById('sendNewline'),
+                sendBtn: document.getElementById('sendBtn'),
+            };
+        }
+        
+        bindEvents() {
+            this.elements.connectBtn.addEventListener('click', () => this.connect());
+            this.elements.disconnectBtn.addEventListener('click', () => this.disconnect());
+            this.elements.clearBtn.addEventListener('click', () => this.clearOutput());
+            this.elements.sendBtn.addEventListener('click', () => this.sendData());
+            this.elements.sendInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    this.sendData();
                 }
+            });
+            this.elements.hexDisplay.addEventListener('change', () => this.refreshDisplay());
+            this.elements.autoReconnect.addEventListener('change', (e) => {
+                this.autoReconnectEnabled = e.target.checked;
+            });
+        }
+
+        async handleBluetoothError(error) {
+            // this.updateStatus('连接失败: ' + error.message);
+            // alert('连接失败: ' + error.message);
+            console.log(error)
+            // this is so fucking ugly but i have no choice
+            // you would never know how those shitty browsers behave
+            if (error.toString().match(/User cancelled/) || error.toString() == "2") return; // "2" is a weird behavior of Bluefy browser on iOS
+            const dialogContent = document.getElementById("dialog-content");
+            if (!navigator.bluetooth || error.toString().match(/Bluetooth adapter not available/)) {
+                dialogContent.innerText = "找不到蓝牙硬件，或浏览器不支持。\n\n限于篇幅，详情请参考源代码仓库内的“疑难解答”。";
+            } else if (error.toString().match(/User denied the browser permission/)) {
+                dialogContent.innerText = "蓝牙权限遭拒。\n\n请前往手机设置，授予浏览器“位置信息”权限。\n此权限不会用于定位，详情请参考源代码仓库内的“疑难解答”。";
+            } else if (error.toString().match(/NetworkError/)) {
+                dialogContent.innerText = "连接不稳定，无法与蓝牙设备建立连接。\n请重试。";
             } else {
-                // 普通字符
-                let char = text[i];
-                let styleStr = '';
-                if (currentStyle.color) styleStr += `color: ${currentStyle.color}; `;
-                if (currentStyle.backgroundColor) styleStr += `background-color: ${currentStyle.backgroundColor}; `;
-                if (currentStyle.bold) styleStr += 'font-weight: bold; ';
-                if (styleStr) {
-                    result += `<span style="${styleStr}">${char}</span>`;
-                } else {
-                    result += char;
-                }
-                i++;
+                dialogContent.innerText = error + "\n\n是什么呢\n\n（这可能是一个Bug，请截图并反馈给开发者。）";
             }
+            document.getElementById("dialog").showModal();
+            if (bluetoothDevice) await bluetoothDevice.gatt.disconnect();
+            isStarted = false;
         }
-        return result;
-    }
 
-    function log(message) {
-        const logInfo = document.getElementById("loginfo");
-        // 解析ANSI转义序列并转换为HTML
-        const htmlMessage = ansiToHtml(message);
-        // 追加HTML消息
-        logInfo.innerHTML += htmlMessage;
-        
-        // 自动清除部分最前面的数据（限制最大字符数为10000）
-        const maxLength = 10000;
-        if (logInfo.innerHTML.length > maxLength) {
-            // 保留最新的8000个字符
-            // logInfo.innerHTML = logInfo.innerHTML.slice(-8000);
-        }
-        
-        // 自动滚动到底部
-        try { logInfo.scrollTop = logInfo.scrollHeight; } catch (e) { /* ignore */ }
-    }
-
-    let bluetoothDevice;
-    let Characteristic;
-    let CharacteristicRx;
-    let isStarted = false;
-    let receivedBytes = 0;
-    
-    // 添加自动重连相关变量
-    let autoReconnect = false;
-    let reconnectInterval = null;
-    let reconnectAttempts = 0;
-    const maxReconnectAttempts = 5; // 最大重连次数
-    const reconnectDelay = 3000; // 重连延迟（毫秒）
-
-    function updateUi(stage) {
-        const mainButton = document.getElementById("main-button");
-        const sendButton = document.getElementById("send-button");
-        const deviceName = document.getElementById("device-name");
-        // const deviceName = document.getElementById("device-name").textContent;
-        const status = document.getElementById("status");
-        const recvinfo = document.getElementById("recvinfo");
-        switch (stage) {
-            case "pending":
-                mainButton.innerText = "连接...";
-                mainButton.disabled = true;
-                sendButton.disabled = true;
-                deviceName.value = "连接..." + bluetoothDevice.name;
-                break;
-            case "ok":
-                mainButton.innerText = "断开";
-                mainButton.disabled = false;
-                sendButton.disabled = false;
-                deviceName.value = "已连接：" + bluetoothDevice.name;
-                break;
-            case "standby":
-                mainButton.innerText = "连接";
-                mainButton.disabled = false;
-                sendButton.disabled = false;
-                deviceName.value = "未连接";
-                break;
-            case "disconnected":
-                mainButton.innerText = "连接";
-                mainButton.disabled = false;
-                sendButton.disabled = true;
-                deviceName.value = "已断开："  + bluetoothDevice.name;
-                break;
-            case "reconnecting":
-                mainButton.innerText = "重连...";
-                mainButton.disabled = true;
-                sendButton.disabled = true;
-                deviceName.value = "重连..."  + bluetoothDevice.name;
-                break;
-        }
-    }
-
-    async function handleBluetoothError(error) {
-        console.log(error)
-        // this is so fucking ugly but i have no choice
-        // you would never know how those shitty browsers behave
-        if (error.toString().match(/User cancelled/) || error.toString() == "2") return; // "2" is a weird behavior of Bluefy browser on iOS
-        const dialogContent = document.getElementById("dialog-content");
-        if (!navigator.bluetooth || error.toString().match(/Bluetooth adapter not available/)) {
-            dialogContent.innerText = "找不到蓝牙硬件，或浏览器不支持。\n\n限于篇幅，详情请参考源代码仓库内的“疑难解答”。";
-        } else if (error.toString().match(/User denied the browser permission/)) {
-            dialogContent.innerText = "蓝牙权限遭拒。\n\n请前往手机设置，授予浏览器“位置信息”权限。\n此权限不会用于定位，详情请参考源代码仓库内的“疑难解答”。";
-        } else if (error.toString().match(/NetworkError/)) {
-            dialogContent.innerText = "连接不稳定，无法与蓝牙设备建立连接。\n请重试。";
-        } else {
-            dialogContent.innerText = error + "\n\n是什么呢\n\n（这可能是一个Bug，请截图并反馈给开发者。）";
-        }
-        document.getElementById("dialog").showModal();
-        if (bluetoothDevice) await bluetoothDevice.gatt.disconnect();
-        isStarted = false;
-        updateUi("standby");
-    }
-
-    function bufferToHexString(array) {
-    // explanation: [0x12, 0x34, 0xAB, 0xCD] => "1234ABCD"
-    return Array.from(new Uint8Array(array))
-        .map((x) => x.toString(16).padStart(2, "0"))
-        .join("")
-        .toUpperCase();
-    }
-
-    async function handleRxdNotifications(event) {
-        const value = event.target.value;
-        const bytes = new Uint8Array(value.buffer);
-        const isHex = document.getElementById('recv-hex-mode').checked;
-        
-        // 更新接收字节数
-        receivedBytes += bytes.length;
-        updateByteCount();
-        
-        if (isHex) {
-            const hex = bufferToHexString(bytes);
-            log(hex + '\n');
-        } else {
-            let utf8 = '';
+        async connect() {
             try {
-                utf8 = new TextDecoder().decode(bytes);
-            } catch (e) {
-                utf8 = '[无法以 UTF-8 解码]';
+                this.updateStatus('正在搜索设备...');
+                
+                // 请求蓝牙设备
+                const device = await navigator.bluetooth.requestDevice({
+                    filters: [{
+                        namePrefix: this.elements.deviceNameFilter.value || 'Pet_'
+                    }],
+                    optionalServices: this.services.map(s => s.uuid)
+                });
+                
+                this.device = device;
+                this.updateStatus('正在连接...');
+                
+                // 连接GATT服务器
+                this.server = await device.gatt.connect();
+                
+                // 尝试连接优先服务
+                let connectedService = null;
+                for (const serviceConfig of this.services) {
+                    try {
+                        const service = await this.server.getPrimaryService(serviceConfig.uuid);
+                        connectedService = serviceConfig;
+                        
+                        // 获取特征值
+                        this.receiveCharacteristic = await service.getCharacteristic(serviceConfig.receiveCharUuid);
+                        this.sendCharacteristic = await service.getCharacteristic(serviceConfig.sendCharUuid);
+                        
+                        // 启用通知
+                        await this.receiveCharacteristic.startNotifications();
+                        this.receiveCharacteristic.addEventListener('characteristicvaluechanged', 
+                            (e) => this.handleReceive(e));
+                        
+                        break;
+                    } catch (error) {
+                        console.log(`服务 ${serviceConfig.uuid} 连接失败:`, error);
+                        continue;
+                    }
+                }
+                
+                if (!connectedService) {
+                    throw new Error('无法连接到任何已知服务');
+                }
+                
+                this.isConnected = true;
+                this.updateUI();
+                this.updateStatus('已连接', device.name);
+                
+                // 监听设备断开
+                device.addEventListener('gattserverdisconnected', () => {
+                    this.handleDisconnect();
+                });
+                
+            } catch (error) {
+                await this.handleBluetoothError(error);
             }
-            log(utf8);
+        }
+        
+        async disconnect() {
+            if (this.device && this.device.gatt.connected) {
+                await this.device.gatt.disconnect();
+            }
+            this.handleDisconnect();
+        }
+        
+        handleDisconnect() {
+            this.isConnected = false;
+            this.updateUI();
+            this.updateStatus('已断开');
+            
+            // 自动重连
+            if (this.autoReconnectEnabled) {
+                this.scheduleReconnect();
+            }
+        }
+        
+        scheduleReconnect() {
+            if (this.reconnectTimer) {
+                clearTimeout(this.reconnectTimer);
+            }
+            
+            this.reconnectTimer = setTimeout(() => {
+                if (this.autoReconnectEnabled && !this.isConnected) {
+                    this.updateStatus('自动重连中...');
+                    this.connect();
+                }
+            }, 3000);
+        }
+        
+        handleReceive(event) {
+            const value = event.target.value;
+            const bytes = new Uint8Array(value.buffer);
+            
+            this.receivedBytes += bytes.length;
+            this.elements.receivedBytes.textContent = `接收: ${this.receivedBytes}`;
+            
+            if (this.elements.hexDisplay.checked) {
+                // HEX显示
+                const hexString = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join(' ');
+                this.appendOutput(hexString + ' ');
+            } else {
+                // UTF-8显示
+                const text = new TextDecoder('utf-8').decode(bytes);
+                const processedText = this.processAnsiColors(text);
+                this.appendOutput(processedText);
+            }
+        }
+        
+        processAnsiColors(text) {
+            try {
+                let result = text;
+                
+                // 处理复杂格式如 \x1b[1;31m (粗体+红色)
+                const complexPattern = /\x1b\[(\d+);(\d+)m/g;
+                result = result.replace(complexPattern, (match, styleCode, colorCode) => {
+                    const colorMap = {
+                        '30': 'ansi-black',
+                        '31': 'ansi-red', 
+                        '32': 'ansi-green',
+                        '33': 'ansi-yellow',
+                        '34': 'ansi-blue',
+                        '35': 'ansi-magenta',
+                        '36': 'ansi-cyan',
+                        '37': 'ansi-white'
+                    };
+                    
+                    const colorClass = colorMap[colorCode];
+                    if (colorClass) {
+                        if (styleCode === '1') {
+                            return `<span class="${colorClass} ansi-bold">`;
+                        }
+                        return `<span class="${colorClass}">`;
+                    }
+                    return match;
+                });
+                
+                // 处理简单颜色格式
+                const simpleColorMap = {
+                    '\x1b[30m': '<span class="ansi-black">',
+                    '\x1b[31m': '<span class="ansi-red">',
+                    '\x1b[32m': '<span class="ansi-green">',
+                    '\x1b[33m': '<span class="ansi-yellow">',
+                    '\x1b[34m': '<span class="ansi-blue">',
+                    '\x1b[35m': '<span class="ansi-magenta">',
+                    '\x1b[36m': '<span class="ansi-cyan">',
+                    '\x1b[37m': '<span class="ansi-white">',
+                    '\x1b[0m': '</span>',
+                    '\x1b[1m': '<span class="ansi-bold">'
+                };
+                
+                for (const [ansiCode, htmlTag] of Object.entries(simpleColorMap)) {
+                    result = result.split(ansiCode).join(htmlTag);
+                }
+                
+                return result;
+            } catch (error) {
+                console.warn('ANSI颜色处理失败:', error);
+                return text;
+            }
+        }
+        
+        appendOutput(content) {
+            const output = this.elements.receiveOutput;
+            const isAtBottom = output.scrollTop >= output.scrollHeight - output.clientHeight - 10;
+            
+            // 调试：检查内容中是否包含ANSI转义字符
+            if (content.includes('\x1b[')) {
+                console.log('检测到ANSI转义字符:', content);
+                // 显示原始内容和处理后的内容对比
+                const processed = this.processAnsiColors(content);
+                console.log('原始内容:', JSON.stringify(content));
+                console.log('处理后内容:', processed);
+            }
+            
+            output.innerHTML += content;
+            
+            // 保持滚动到底部
+            if (isAtBottom) {
+                output.scrollTop = output.scrollHeight;
+            }
+        }
+        
+        async sendData() {
+            if (!this.isConnected || !this.sendCharacteristic) {
+                return;
+            }
+            
+            const input = this.elements.sendInput.value.trim();
+            if (!input) return;
+            
+            try {
+                let data;
+                if (this.elements.hexSend.checked) {
+                    // HEX发送
+                    const hexString = input.replace(/\\s/g, '');
+                    if (!/^[0-9a-fA-F]*$/.test(hexString)) {
+                        alert('HEX格式错误');
+                        return;
+                    }
+                    data = new Uint8Array(hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+                } else {
+                    // 文本发送
+                    let text = input;
+                    if (this.elements.sendNewline.checked) {
+                        text += '\n';
+                    }
+                    data = new TextEncoder().encode(text);
+                }
+                
+                await this.sendCharacteristic.writeValue(data);
+                // this.elements.sendInput.value = '';
+                
+            } catch (error) {
+                console.error('发送失败:', error);
+                alert('发送失败: ' + error.message);
+            }
+        }
+        
+        clearOutput() {
+            this.elements.receiveOutput.innerHTML = '';
+            this.receivedBytes = 0;
+            this.elements.receivedBytes.textContent = '接收: 0';
+        }
+        
+        refreshDisplay() {
+            // 切换显示模式时重新显示已有内容
+            // 这里可以实现更复杂的逻辑
+        }
+        
+        updateStatus(status, deviceName = '') {
+            this.elements.connectionStatus.textContent = status;
+            if (deviceName) {
+                this.elements.connectedDevice.textContent = ` : ${deviceName}`;
+            } else {
+                this.elements.connectedDevice.textContent = '';
+            }
+        }
+        
+        updateUI() {
+            if (this.isConnected) {
+                this.elements.connectBtn.style.display = 'none';
+                this.elements.disconnectBtn.style.display = 'block';
+                this.elements.sendBtn.disabled = false;
+            } else {
+                this.elements.connectBtn.style.display = 'block';
+                this.elements.disconnectBtn.style.display = 'none';
+                this.elements.sendBtn.disabled = true;
+            }
         }
     }
 
-    async function reconnect(maxRetries = 5, baseDelay = 1000) {
-        if (!bluetoothDevice) {
-            log("无法重新连接，因为没有已连接的设备\n");
+    // 初始化应用
+    document.addEventListener('DOMContentLoaded', () => {
+        // 检查浏览器支持
+        if (!navigator.bluetooth) {
+            alert('您的浏览器不支持Web Bluetooth API，请使用Chrome、Edge或Opera浏览器。');
             return;
         }
-
-        log("正在重新连接...\n");
-        updateUi("reconnecting");
-
-        let retries = 0;
-        let delay = baseDelay;
-        while (retries < maxRetries) {
-            try {
-                await new Promise(resolve => setTimeout(resolve, delay));
-                await handleConnect();
-                log("\n********重连成功********\n\n");
-                return;
-            } catch (error) {
-                retries++;
-                if (retries >= maxRetries) {
-                    log("\n********重连失败********\n\n");
-                    updateUi("disconnected");
-                    break;
-                }
-                delay *= 2;
-            }
-        }
-    }
-    // 处理蓝牙设备断开连接事件
-    function handleDeviceDisconnected(event) {
-        log("\n*****设备连接已断开*****\n\n");
-        isStarted = false;
-        updateUi("reconnecting");
-        reconnect();
-    }
-
-    async function handleConnect()
-    {
-        try {
-            const server = await bluetoothDevice.gatt.connect();
-            const services = await server.getPrimaryServices();
-            if(services.length == 0){
-                throw new Error('No services found');
-                return;
-            }
-            // 优先使用特定服务UUID
-            let service = services.find(s => s.uuid.toLowerCase() === '0000d0d0-0000-1000-8000-00805f9b34fb');
-            if (!service) {
-                service = services.find(s => s.uuid.toLowerCase() === '6e400001-b5a3-f393-e0a9-e50e24dcca9e');
-                if (!service) {
-                    service = services[0];
-                }
-            }
-            // 获取可以读写字符流的服务
-            const Characteristics = await service.getCharacteristics();
-            if(Characteristics.length == 0){
-                throw new Error('No characteristics found');
-                return;
-            }
-            // 判断服务UUID，如果是特定服务，则使用特定的特征UUID
-            let txChar = null;
-            let rxChar = null;
-            if (service.uuid.toLowerCase() === '0000d0d0-0000-1000-8000-00805f9b34fb') {
-                txChar = Characteristics.find(c => c.uuid.toLowerCase() === '0000d0d1-0000-1000-8000-00805f9b34fb');
-                rxChar = Characteristics.find(c => c.uuid.toLowerCase() === '0000d0d2-0000-1000-8000-00805f9b34fb');
-            }
-            else if (service.uuid.toLowerCase() === '6e400001-b5a3-f393-e0a9-e50e24dcca9e') {
-                txChar = Characteristics.find(c => c.uuid.toLowerCase() === '6e400002-b5a3-f393-e0a9-e50e24dcca9e');
-                rxChar = Characteristics.find(c => c.uuid.toLowerCase() === '6e400005-b5a3-f393-e0a9-e50e24dcca9e');
-            }
-            if (!txChar || !rxChar) {
-                // 如果没找到，fallback到旧逻辑
-                if(Characteristics.length == 1) {
-                    txChar = Characteristics[0];
-                    rxChar = Characteristics[0];
-                } else {
-                    txChar = Characteristics[0];
-                    rxChar = Characteristics[1];
-                }
-            }
-            Characteristic = txChar;
-            CharacteristicRx = rxChar;
-            await CharacteristicRx.startNotifications();
-            CharacteristicRx.addEventListener("characteristicvaluechanged", handleRxdNotifications);
-            // // 写入字节(括号中的方法为把字符串转为字符流,传输给蓝牙)
-            // await Characteristic.writeValue(makePayload(bluetoothDevice.name));
-            log(`已连接到设备: ${bluetoothDevice.name}\n` );
-            log(`使用服务: ${service.uuid}\n`);
-            log(`发送特征: ${Characteristic.uuid}\n`);
-            log(`接收特征: ${CharacteristicRx.uuid}\n`);
-            isStarted = true;
-            updateUi("ok");
-
-        } catch (error) {
-            handleBluetoothError(error);
-        }
-    }
-
-    async function senddata() {
-        try {
-            const payload = makePayload();
-            // const hex = bufferToHexString(payload);
-            // let utf8 = '';
-            // try { utf8 = new TextDecoder().decode(payload); } catch(e) { utf8 = '[无法以 UTF-8 解码]'; }
-            // log(utf8);
-            await Characteristic.writeValue(payload);
-        } catch (error) {
-            log('发送失败: ' + error + '\n');
-        }
-    }
-
-    async function start() {
-        log('开始连接...\n');
-        const filterValue = document.getElementById('device-filter').value.trim();
-        const options = {
-            optionalServices: ['0000d0d0-0000-1000-8000-00805f9b34fb', '6e400001-b5a3-f393-e0a9-e50e24dcca9e']
-        };
-        if (filterValue) {
-            options.filters = [{ namePrefix: filterValue }];
-        } else {
-            options.acceptAllDevices = true;
-        }
-        bluetoothDevice = await navigator.bluetooth.requestDevice(options);
-        updateUi("pending");
         
-        // 注册断开连接事件监听器
-        bluetoothDevice.addEventListener('gattserverdisconnected', handleDeviceDisconnected);
-
-        await handleConnect();
-    }
-
-    async function end() {
-        try {
-            if (bluetoothDevice && bluetoothDevice.gatt.connected) {
-                // 移除断开连接事件监听器
-                bluetoothDevice.removeEventListener('gattserverdisconnected', handleDeviceDisconnected);
-                
-                // 停止通知
-                if (CharacteristicRx) {
-                    await CharacteristicRx.stopNotifications();
-                    CharacteristicRx.removeEventListener("characteristicvaluechanged", handleRxdNotifications);
-                }
-                
-                // 断开GATT连接
-                await bluetoothDevice.gatt.disconnect();
-            }
-            isStarted = false;
-            log("\n***** " + bluetoothDevice.name + " 连接已断开 *****\n\n");
-            updateUi("disconnected");
-        } catch (error) {
-            handleBluetoothError(error);
-        }
-    }
-
-    function handleButtonClick() {
-        // 检查是否需要启用自动重连
-        autoReconnect = document.getElementById('auto-reconnect').checked;
-        
-        if (isStarted) {
-            // 断开连接时取消自动重连
-            autoReconnect = false;
-            if (reconnectInterval) {
-                clearTimeout(reconnectInterval);
-                reconnectInterval = null;
-            }
-            end();
-        } else {
-            // 重置重连计数器
-            reconnectAttempts = 0;
-            start();
-        }
-    }
-
-    // 添加键盘事件监听器到发送窗口
-    document.getElementById('send-text').addEventListener('keydown', function(event) {
-        if (event.key === 'Enter') {
-            if (event.ctrlKey) {
-                // Ctrl+Enter 手动插入换行
-                const textarea = event.target;
-                const start = textarea.selectionStart;
-                const end = textarea.selectionEnd;
-                textarea.value = textarea.value.substring(0, start) + '\n' + textarea.value.substring(end);
-                textarea.selectionStart = textarea.selectionEnd = start + 1;
-                event.preventDefault();
-            } else {
-                // Enter 直接发送
-                event.preventDefault();
-                senddata();
-            }
-        }
+        new BluetoothSerialDebugger();
     });
-    function updateByteCount() {
-        const byteCountElement = document.getElementById('byte-count');
-        if (byteCountElement) {
-            byteCountElement.textContent = `接收: ${receivedBytes}`;
-        }
-    }
-    
-    // 检测是否为移动设备
-    function isMobileDevice() {
-        return (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1);
-    }
-    
-    // 设置接收窗口字体大小
-    function setLogFontSize() {
-        const logInfo = document.getElementById('loginfo');
-        if (logInfo) {
-            if (isMobileDevice()) {
-                logInfo.style.fontSize = '10px';
-            } else {
-                logInfo.style.fontSize = '12px';
-            }
-        }
-    }
-    
-    // 页面加载完成后设置字体大小
-    window.addEventListener('load', setLogFontSize);
-    
-    // 窗口大小变化时重新设置字体大小，以适应响应式布局
-    window.addEventListener('resize', setLogFontSize);
 </script>
 
 </html>
