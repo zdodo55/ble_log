@@ -407,11 +407,10 @@
             let service = services.find(s => s.uuid.toLowerCase() === '0000d0d0-0000-1000-8000-00805f9b34fb');
             if (!service) {
                 service = services.find(s => s.uuid.toLowerCase() === '6e400001-b5a3-f393-e0a9-e50e24dcca9e');
+                if (!service) {
+                    service = services[0];
+                }
             }
-            if (!service) {
-                service = services[0];
-            }
-            // console.log(`service`, service.uuid);
             // 获取可以读写字符流的服务
             const Characteristics = await service.getCharacteristics();
             if(Characteristics.length == 0){
@@ -506,7 +505,7 @@
                 await bluetoothDevice.gatt.disconnect();
             }
             isStarted = false;
-            log("\n***** " + bluetoothDevice.name + "连接已断开 *****\n\n");
+            log("\n***** " + bluetoothDevice.name + " 连接已断开 *****\n\n");
             updateUi("disconnected");
         } catch (error) {
             handleBluetoothError(error);
