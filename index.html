@@ -231,6 +231,40 @@
             cursor: not-allowed;
         }
 
+        /* 自定义按键区域 */
+        .custom-buttons-panel {
+            background-color: #2d2d30;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 5px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .custom-btn {
+            padding: 6px 12px;
+            background-color: #4a4a4a;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: background-color 0.3s;
+            white-space: nowrap;
+        }
+
+        .custom-btn:hover:not(:disabled) {
+            background-color: #5a5a5a;
+        }
+
+        .custom-btn:disabled {
+            background-color: #3c3c3c;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
         /* 响应式设计 */
         @media (max-width: 600px) {
             .container {
@@ -314,10 +348,6 @@
                 </div>
             </div>
             <div class="connection-right">
-                <div class="checkbox-container">
-                    <input type="checkbox" id="autoReconnect" checked>
-                    <label for="autoReconnect">自动重连</label>
-                </div>
                 <button id="connectBtn" class="connect-btn">连接</button>
                 <button id="disconnectBtn" class="disconnect-btn" style="display: none;">断开</button>
             </div>
@@ -331,6 +361,10 @@
                     <div class="checkbox-container">
                         <input type="checkbox" id="hexDisplay">
                         <label for="hexDisplay">HEX</label>
+                    </div>
+                    <div class="checkbox-container">
+                        <input type="checkbox" id="autoReconnect" checked>
+                        <label for="autoReconnect">自动重连</label>
                     </div>
                     <button id="clearBtn" class="clear-btn">清除</button>
                 </div>
@@ -351,6 +385,15 @@
             </div>
             <button id="sendBtn" class="send-btn" disabled>发送</button>
         </div>
+
+        <!-- 自定义按键区域 -->
+        <div class="custom-buttons-panel">
+            <button id="btnTracker" class="custom-btn" disabled>Tracker状态</button>
+            <button id="btnBattery" class="custom-btn" disabled>电量</button>
+            <button id="btnMotion" class="custom-btn" disabled>运动状态</button>
+            <button id="btnWifiZone" class="custom-btn" disabled>WiFi-Zone</button>
+            <button id="btnFence" class="custom-btn" disabled>围栏</button>
+        </div>
     </div>
 
     <!-- <script src="bluetooth.js"></script> -->
@@ -368,6 +411,14 @@
             this.receivedBytes = 0;
             this.autoReconnectEnabled = false;
             this.reconnectTimer = null;
+            
+            // 性能优化相关
+            this.receiveBuffer = []; // 数据缓冲区
+            this.bufferSize = 0; // 缓冲区大小
+            this.maxDisplaySize = 500 * 1024; // 最大显示数据量（500KB）
+            this.updateInterval = 100; // 更新间隔（毫秒）
+            this.updateTimer = null; // 更新定时器
+            this.pendingContent = ''; // 待显示内容
             
             // 服务UUID配置
             this.services = [
@@ -403,6 +454,12 @@
                 hexSend: document.getElementById('hexSend'),
                 sendNewline: document.getElementById('sendNewline'),
                 sendBtn: document.getElementById('sendBtn'),
+                // 自定义按键
+                btnTracker: document.getElementById('btnTracker'),
+                btnBattery: document.getElementById('btnBattery'),
+                btnMotion: document.getElementById('btnMotion'),
+                btnWifiZone: document.getElementById('btnWifiZone'),
+                btnFence: document.getElementById('btnFence'),
             };
         }
         
@@ -416,10 +473,50 @@
                     this.sendData();
                 }
             });
+
+            // 自定义按键事件
+            this.elements.btnTracker.addEventListener('click', () => this.sendCustomCommand('tracker'));
+            this.elements.btnBattery.addEventListener('click', () => this.sendCustomCommand('adc'));
+            this.elements.btnMotion.addEventListener('click', () => this.sendCustomCommand('gsensor snapshot'));
+            this.elements.btnWifiZone.addEventListener('click', () => this.sendCustomCommand('wifizone'));
+            this.elements.btnFence.addEventListener('click', () => this.sendCustomCommand('fence'));
+
             this.elements.hexDisplay.addEventListener('change', () => this.refreshDisplay());
             this.elements.autoReconnect.addEventListener('change', (e) => {
                 this.autoReconnectEnabled = e.target.checked;
             });
+        }
+
+        sendCustomCommand(command) {
+            if (!this.isConnected || !this.sendCharacteristic) {
+                console.warn('设备未连接，无法发送命令');
+                return;
+            }
+
+            try {
+                let data = command + '\n';
+                
+                if (this.elements.hexSend.checked) {
+                    // HEX模式发送
+                    const hexArray = data.split('').map(char => char.charCodeAt(0).toString(16).padStart(2, '0'));
+                    data = hexArray.join(' ');
+                }
+
+                const encoder = new TextEncoder();
+                const buffer = encoder.encode(data);
+                
+                this.sendCharacteristic.writeValue(buffer)
+                    .then(() => {
+                        console.log(`发送自定义命令成功: ${command}`);
+                    })
+                    .catch(error => {
+                        console.error('发送自定义命令失败:', error);
+                        this.handleBluetoothError('发送失败', error);
+                    });
+            } catch (error) {
+                console.error('发送自定义命令错误:', error);
+                this.handleBluetoothError('发送错误', error);
+            }
         }
 
         async handleBluetoothError(error) {
@@ -513,7 +610,7 @@
         handleDisconnect() {
             this.isConnected = false;
             this.updateUI();
-            this.updateStatus('已断开');
+            this.updateStatus('已断开', this.device.name);
             
             // 自动重连
             if (this.autoReconnectEnabled) {
@@ -541,15 +638,56 @@
             this.receivedBytes += bytes.length;
             this.elements.receivedBytes.textContent = `接收: ${this.receivedBytes}`;
             
+            let content;
             if (this.elements.hexDisplay.checked) {
                 // HEX显示
                 const hexString = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join(' ');
-                this.appendOutput(hexString + ' ');
+                content = hexString + ' ';
             } else {
                 // UTF-8显示
                 const text = new TextDecoder('utf-8').decode(bytes);
-                const processedText = this.processAnsiColors(text);
-                this.appendOutput(processedText);
+                content = this.processAnsiColors(text);
+            }
+            
+            // 添加到缓冲区
+            this.pendingContent += content;
+            this.scheduleUpdate();
+        }
+        
+        scheduleUpdate() {
+            if (!this.updateTimer) {
+                this.updateTimer = setTimeout(() => {
+                    this.flushBuffer();
+                    this.updateTimer = null;
+                }, this.updateInterval);
+            }
+        }
+        
+        flushBuffer() {
+            if (!this.pendingContent) return;
+            
+            const output = this.elements.receiveOutput;
+            const isAtBottom = output.scrollTop >= output.scrollHeight - output.clientHeight - 10;
+            
+            // 性能优化：限制最大显示内容
+            const currentContent = output.innerHTML;
+            const currentSize = new Blob([currentContent]).size;
+            const newContentSize = new Blob([this.pendingContent]).size;
+            
+            if (currentSize + newContentSize > this.maxDisplaySize) {
+                // 删除旧内容（保留最后80%的内容）
+                const lines = currentContent.split('\n');
+                const linesToKeep = Math.floor(lines.length * 0.8);
+                output.innerHTML = lines.slice(-linesToKeep).join('\n');
+            }
+            
+            // 批量添加新内容
+            output.innerHTML += this.pendingContent;
+            this.pendingContent = '';
+            
+            // 保持滚动到底部
+            if (isAtBottom) {
+                output.scrollTop = output.scrollHeight;
             }
         }
         
@@ -667,6 +805,21 @@
             this.elements.receiveOutput.innerHTML = '';
             this.receivedBytes = 0;
             this.elements.receivedBytes.textContent = '接收: 0';
+            this.pendingContent = ''; // 清空缓冲区
+            if (this.updateTimer) {
+                clearTimeout(this.updateTimer);
+                this.updateTimer = null;
+            }
+        }
+        
+        // 添加页面卸载时的清理
+        cleanup() {
+            if (this.updateTimer) {
+                clearTimeout(this.updateTimer);
+            }
+            if (this.reconnectTimer) {
+                clearTimeout(this.reconnectTimer);
+            }
         }
         
         refreshDisplay() {
@@ -693,6 +846,13 @@
                 this.elements.disconnectBtn.style.display = 'none';
                 this.elements.sendBtn.disabled = true;
             }
+
+            // 更新自定义按键状态
+            this.elements.btnTracker.disabled = !this.isConnected;
+            this.elements.btnBattery.disabled = !this.isConnected;
+            this.elements.btnMotion.disabled = !this.isConnected;
+            this.elements.btnWifiZone.disabled = !this.isConnected;
+            this.elements.btnFence.disabled = !this.isConnected;
         }
     }
 
