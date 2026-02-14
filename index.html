@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -22,7 +23,11 @@
         }
 
         /* 全局字体大小统一 */
-        input, button, label, span, div {
+        input,
+        button,
+        label,
+        span,
+        div {
             font-size: 12px !important;
         }
 
@@ -53,7 +58,7 @@
             flex: 1;
         }
 
-        .connection-left input{
+        .connection-left input {
             width: 100px;
         }
 
@@ -105,8 +110,24 @@
         }
 
         .status-info {
-            color: #4ec9b0;
             font-size: 12px;
+            color: white;
+        }
+
+        .status-connected {
+            color: rgb(0, 255, 0) !important;
+        }
+
+        .status-connecting {
+            color: yellow !important;
+        }
+
+        .status-disconnected {
+            color: white !important;
+        }
+
+        .status-error {
+            color: red !important;
         }
 
         .checkbox-container {
@@ -150,7 +171,8 @@
             padding: 5px;
             overflow-y: auto;
             font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-            font-size: 12px; /* PC端默认字体大小 */
+            font-size: 12px;
+            /* PC端默认字体大小 */
             /* line-height: 1.4; */
             background-color: #1e1e1e;
             color: #d4d4d4;
@@ -270,37 +292,38 @@
             .container {
                 padding: 5px;
             }
-            
+
             .connection-panel {
                 padding: 5px;
                 gap: 5px;
             }
-            
+
             .connection-panel input {
                 font-size: 12px;
                 padding: 4px 5px;
             }
-            
+
             .connection-panel button {
                 font-size: 12px;
                 padding: 4px 12px;
             }
-            
+
             .receive-output {
-                font-size: 10px; /* 手机移动端字体大小 */
+                font-size: 10px;
+                /* 手机移动端字体大小 */
                 padding: 5px;
             }
-            
+
             .send-panel {
                 padding: 5px;
                 gap: 5px;
             }
-            
+
             .send-input {
                 font-size: 12px;
                 padding: 6px 5px;
             }
-            
+
             .send-btn {
                 font-size: 12px;
                 padding: 6px 12px;
@@ -308,33 +331,206 @@
         }
 
         /* 颜色转义字符样式 */
-        .ansi-bold { font-weight: bold; }
-        .ansi-black { color: black; }
-        .ansi-red { color: red; }
-        .ansi-green { color: green; }
-        .ansi-yellow { color: yellow; }
-        .ansi-blue { color: blue; }
-        .ansi-magenta { color: magenta; }
-        .ansi-cyan { color: cyan; }
-        .ansi-white { color: white; }
-        
-        .ansi-bg-black { background-color: black; }
-        .ansi-bg-red { background-color: red; }
-        .ansi-bg-green { background-color: green; }
-        .ansi-bg-yellow { background-color: yellow; }
-        .ansi-bg-blue { background-color: blue; }
-        .ansi-bg-magenta { background-color: magenta; }
-        .ansi-bg-cyan { background-color: cyan; }
-        .ansi-bg-white { background-color: white; }
+        .ansi-bold {
+            font-weight: bold;
+        }
+
+        .ansi-black {
+            color: black;
+        }
+
+        .ansi-red {
+            color: red;
+        }
+
+        .ansi-green {
+            color: rgb(0, 255, 0);
+        }
+
+        .ansi-yellow {
+            color: yellow;
+        }
+
+        .ansi-blue {
+            color: blue;
+        }
+
+        .ansi-magenta {
+            color: magenta;
+        }
+
+        .ansi-cyan {
+            color: cyan;
+        }
+
+        .ansi-white {
+            color: white;
+        }
+
+        .ansi-bg-black {
+            background-color: black;
+        }
+
+        .ansi-bg-red {
+            background-color: red;
+        }
+
+        .ansi-bg-green {
+            background-color: rgb(0, 255, 0);
+        }
+
+        .ansi-bg-yellow {
+            background-color: yellow;
+        }
+
+        .ansi-bg-blue {
+            background-color: blue;
+        }
+
+        .ansi-bg-magenta {
+            background-color: magenta;
+        }
+
+        .ansi-bg-cyan {
+            background-color: cyan;
+        }
+
+        .ansi-bg-white {
+            background-color: white;
+        }
+
+        /* DFU区域 */
+        .dfu-panel {
+            background-color: #2d2d30;
+            border-radius: 5px;
+            margin-bottom: 5px;
+            /* padding: 5px 8px; */
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .dfu-panel input[type="file"] {
+            display: none;
+        }
+
+        .dfu-file-btn {
+            padding: 5px 5px;
+            background-color: #4a4a4a;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background-color 0.3s;
+            white-space: nowrap;
+        }
+
+        .dfu-file-btn:hover {
+            background-color: #5a5a5a;
+        }
+
+        .dfu-file-info {
+            color: #9cdcfe;
+            font-size: 12px;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .dfu-start-btn {
+            padding: 5px 5px;
+            background-color: #2ea043;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background-color 0.3s;
+        }
+
+        .dfu-start-btn:hover:not(:disabled) {
+            background-color: #3fb950;
+        }
+
+        .dfu-start-btn:disabled {
+            background-color: #3c3c3c;
+            cursor: not-allowed;
+        }
+
+        .dfu-stop-btn {
+            padding: 5px 15px;
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .dfu-stop-btn:hover {
+            background-color: #c0392b;
+        }
+
+        .dfu-progress {
+            flex: 1;
+            min-width: 120px;
+            height: 18px;
+            background-color: #1e1e1e;
+            border-radius: 9px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .dfu-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #0e639c, #3fb950);
+            border-radius: 9px;
+            transition: width 0.2s ease;
+            width: 0%;
+        }
+
+        .dfu-progress-text {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 11px;
+            font-weight: bold;
+            text-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
+        }
+
+        .dfu-status {
+            font-size: 12px;
+            color: #4ec9b0;
+            white-space: nowrap;
+        }
+
+        .dfu-status.error {
+            color: #f44747;
+        }
+
+        .dfu-status.success {
+            color: #3fb950;
+        }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 </head>
+
 <body>
     <div class="container">
         <!-- 连接区域 -->
         <div class="connection-panel">
             <div class="connection-left">
                 <label>过滤:</label>
-                <input type="text" id="deviceNameFilter" placeholder="蓝牙名称过滤" value="Pet_">
+                <input type="text" id="deviceNameFilter" placeholder="蓝牙名称过滤" value="Pet_G">
                 <div class="status-info">
                     <span id="connectionStatus">未连接</span>
                     <span id="connectedDevice"></span>
@@ -346,11 +542,29 @@
             </div>
         </div>
 
+        <!-- DFU区域 -->
+        <div class="dfu-panel" id="dfuPanel" style="display: none;">
+            <input type="file" id="dfuFile" accept=".zip,.bin">
+            <button class="dfu-file-btn" id="dfuFileBtn">选择固件</button>
+            <span class="dfu-file-info" id="dfuFileInfo">未选择文件</span>
+            <button class="dfu-start-btn" id="dfuStartBtn" disabled>开始DFU</button>
+            <button class="dfu-stop-btn" id="dfuStopBtn" style="display:none">停止</button>
+            <div class="dfu-progress" id="dfuProgressContainer" style="display:none">
+                <div class="dfu-progress-bar" id="dfuProgressBar"></div>
+                <span class="dfu-progress-text" id="dfuProgressText">0%</span>
+            </div>
+            <span class="dfu-status" id="dfuStatus"></span>
+        </div>
+
         <!-- 接收区域 -->
         <div class="receive-panel">
             <div class="receive-header">
                 <span id="receivedBytes">接收: 0</span>
                 <div class="receive-controls">
+                    <div class="checkbox-container" style="margin-left: 10px;">
+                        <input type="checkbox" id="dfuToggle">
+                        <label for="dfuToggle">DFU模式</label>
+                    </div>
                     <div class="checkbox-container">
                         <input type="checkbox" id="hexDisplay">
                         <label for="hexDisplay">HEX</label>
@@ -402,9 +616,10 @@
             this.sendCharacteristic = null;
             this.isConnected = false;
             this.receivedBytes = 0;
-            this.autoReconnectEnabled = false;
+            this.autoReconnectEnabled = document.getElementById('autoReconnect').checked;
             this.reconnectTimer = null;
-            
+            this.isManualDisconnect = false; // 记录是否为手动断开
+
             // 性能优化相关
             this.receiveBuffer = []; // 数据缓冲区
             this.bufferSize = 0; // 缓冲区大小
@@ -412,7 +627,7 @@
             this.updateInterval = 100; // 更新间隔（毫秒）
             this.updateTimer = null; // 更新定时器
             this.pendingContent = ''; // 待显示内容
-            
+
             // 服务UUID配置
             this.services = [
                 {
@@ -426,16 +641,24 @@
                     receiveCharUuid: '6e400005-b5a3-f393-e0a9-e50e24dcca9e'
                 }
             ];
-            
+
+            // SMP DFU相关
+            this.SMP_SERVICE_UUID = '8d53dc1d-1db7-4cd3-868b-8a527460aa84';
+            this.SMP_CHAR_UUID = 'da2e7828-fbce-4e01-ae9e-261174997c48';
+            this.smpCharacteristic = null;
+            this.dfuManager = null;
+            this.firmwareData = null;
+
             this.initElements();
             this.bindEvents();
         }
-        
+
         initElements() {
             this.elements = {
                 deviceNameFilter: document.getElementById('deviceNameFilter'),
                 connectionStatus: document.getElementById('connectionStatus'),
                 connectedDevice: document.getElementById('connectedDevice'),
+                dfuToggle: document.getElementById('dfuToggle'),
                 autoReconnect: document.getElementById('autoReconnect'),
                 connectBtn: document.getElementById('connectBtn'),
                 disconnectBtn: document.getElementById('disconnectBtn'),
@@ -453,9 +676,21 @@
                 btnMotion: document.getElementById('btnMotion'),
                 btnWifiZone: document.getElementById('btnWifiZone'),
                 btnFence: document.getElementById('btnFence'),
+                // DFU元素
+                dfuFile: document.getElementById('dfuFile'),
+                dfuFileBtn: document.getElementById('dfuFileBtn'),
+                dfuFileInfo: document.getElementById('dfuFileInfo'),
+                dfuStartBtn: document.getElementById('dfuStartBtn'),
+                dfuStopBtn: document.getElementById('dfuStopBtn'),
+                dfuProgressContainer: document.getElementById('dfuProgressContainer'),
+                dfuProgressBar: document.getElementById('dfuProgressBar'),
+                dfuProgressText: document.getElementById('dfuProgressText'),
+                dfuProgressText: document.getElementById('dfuProgressText'),
+                dfuStatus: document.getElementById('dfuStatus'),
+                dfuPanel: document.getElementById('dfuPanel'),
             };
         }
-        
+
         bindEvents() {
             this.elements.connectBtn.addEventListener('click', () => this.connect());
             this.elements.disconnectBtn.addEventListener('click', () => this.disconnect());
@@ -466,6 +701,15 @@
                     this.sendData();
                 }
             });
+
+            // DFU按键事件
+            this.elements.dfuToggle.addEventListener('change', (e) => {
+                this.elements.dfuPanel.style.display = e.target.checked ? 'flex' : 'none';
+            });
+            this.elements.dfuFileBtn.addEventListener('click', () => this.elements.dfuFile.click());
+            this.elements.dfuFile.addEventListener('change', (e) => this.handleDFUFileSelect(e));
+            this.elements.dfuStartBtn.addEventListener('click', () => this.startDFU());
+            this.elements.dfuStopBtn.addEventListener('click', () => this.stopDFU());
 
             // 自定义按键事件
             this.elements.btnTracker.addEventListener('click', () => this.sendCustomCommand('tracker'));
@@ -488,7 +732,7 @@
 
             try {
                 let data = command + '\n';
-                
+
                 if (this.elements.hexSend.checked) {
                     // HEX模式发送
                     const hexArray = data.split('').map(char => char.charCodeAt(0).toString(16).padStart(2, '0'));
@@ -497,7 +741,7 @@
 
                 const encoder = new TextEncoder();
                 const buffer = encoder.encode(data);
-                
+
                 this.sendCharacteristic.writeValue(buffer)
                     .then(() => {
                         console.log(`发送自定义命令成功: ${command}`);
@@ -513,124 +757,153 @@
         }
 
         async handleBluetoothError(error) {
-            // this.updateStatus('连接失败: ' + error.message);
-            // alert('连接失败: ' + error.message);
-            console.log(error)
-            // this is so fucking ugly but i have no choice
-            // you would never know how those shitty browsers behave
-            if (error.toString().match(/User cancelled/) || error.toString() == "2") return; // "2" is a weird behavior of Bluefy browser on iOS
-            const dialogContent = document.getElementById("dialog-content");
-            if (!navigator.bluetooth || error.toString().match(/Bluetooth adapter not available/)) {
-                dialogContent.innerText = "找不到蓝牙硬件，或浏览器不支持。\n\n限于篇幅，详情请参考源代码仓库内的“疑难解答”。";
-            } else if (error.toString().match(/User denied the browser permission/)) {
-                dialogContent.innerText = "蓝牙权限遭拒。\n\n请前往手机设置，授予浏览器“位置信息”权限。\n此权限不会用于定位，详情请参考源代码仓库内的“疑难解答”。";
-            } else if (error.toString().match(/NetworkError/)) {
-                dialogContent.innerText = "连接不稳定，无法与蓝牙设备建立连接。\n请重试。";
-            } else {
-                dialogContent.innerText = error + "\n\n是什么呢\n\n（这可能是一个Bug，请截图并反馈给开发者。）";
+            console.error('蓝牙错误:', error);
+
+            // 忽略用户取消操作
+            if (error.toString().match(/User cancelled/) || error.toString() === "2") {
+                this.updateStatus('cancelled');
+                return;
             }
-            document.getElementById("dialog").showModal();
-            if (bluetoothDevice) await bluetoothDevice.gatt.disconnect();
-            isStarted = false;
+
+            let message = error.message || error.toString();
+            if (!navigator.bluetooth || message.match(/Bluetooth adapter not available/)) {
+                message = "找不到蓝牙硬件，或浏览器不支持。";
+            } else if (message.match(/User denied the browser permission/)) {
+                message = "蓝牙权限遭拒。请检查系统设置。";
+            } else if (message.match(/NetworkError/)) {
+                message = "连接不稳定，无法建立连接。";
+            }
+
+            this.updateStatus('error', message);
+
+            if (this.device && this.device.gatt.connected) {
+                try {
+                    await this.device.gatt.disconnect();
+                } catch (e) { }
+            }
+
+            this.isConnected = false;
+            this.updateUI();
         }
 
         async connect() {
             try {
-                this.updateStatus('正在搜索设备...');
-                
+                this.isManualDisconnect = false; // 重置手动断开标志
+
+                this.updateStatus('scanning');
+
                 // 请求蓝牙设备
                 const device = await navigator.bluetooth.requestDevice({
                     filters: [{
                         namePrefix: this.elements.deviceNameFilter.value || 'Pet_'
                     }],
-                    optionalServices: this.services.map(s => s.uuid)
+                    optionalServices: [...this.services.map(s => s.uuid), this.SMP_SERVICE_UUID]
                 });
-                
+
                 this.device = device;
-                this.updateStatus('正在连接...');
-                
-                // 连接GATT服务器
-                this.server = await device.gatt.connect();
-                
-                // 尝试连接优先服务
-                let connectedService = null;
-                for (const serviceConfig of this.services) {
-                    try {
-                        const service = await this.server.getPrimaryService(serviceConfig.uuid);
-                        connectedService = serviceConfig;
-                        
-                        // 获取特征值
-                        this.receiveCharacteristic = await service.getCharacteristic(serviceConfig.receiveCharUuid);
-                        this.sendCharacteristic = await service.getCharacteristic(serviceConfig.sendCharUuid);
-                        
-                        // 启用通知
-                        await this.receiveCharacteristic.startNotifications();
-                        this.receiveCharacteristic.addEventListener('characteristicvaluechanged', 
-                            (e) => this.handleReceive(e));
-                        
-                        break;
-                    } catch (error) {
-                        console.log(`服务 ${serviceConfig.uuid} 连接失败:`, error);
-                        continue;
-                    }
-                }
-                
-                if (!connectedService) {
-                    throw new Error('无法连接到任何已知服务');
-                }
-                
-                this.isConnected = true;
-                this.updateUI();
-                this.updateStatus('已连接', device.name);
-                
-                // 监听设备断开
-                device.addEventListener('gattserverdisconnected', () => {
-                    this.handleDisconnect();
-                });
-                
+                this.updateStatus('connecting', device.name);
+                await this.establishConnection(device);
+
             } catch (error) {
                 await this.handleBluetoothError(error);
             }
         }
-        
+
+        async establishConnection(device) {
+            // 连接GATT服务器
+            this.server = await device.gatt.connect();
+
+            // 尝试连接优先服务
+            let connectedService = null;
+            for (const serviceConfig of this.services) {
+                try {
+                    const service = await this.server.getPrimaryService(serviceConfig.uuid);
+                    connectedService = serviceConfig;
+
+                    // 获取特征值
+                    this.receiveCharacteristic = await service.getCharacteristic(serviceConfig.receiveCharUuid);
+                    this.sendCharacteristic = await service.getCharacteristic(serviceConfig.sendCharUuid);
+
+                    // 启用通知
+                    await this.receiveCharacteristic.startNotifications();
+                    this.receiveCharacteristic.addEventListener('characteristicvaluechanged',
+                        (e) => this.handleReceive(e));
+
+                    break;
+                } catch (error) {
+                    console.log(`服务 ${serviceConfig.uuid} 连接失败:`, error);
+                    continue;
+                }
+            }
+
+            if (!connectedService) {
+                throw new Error('无法连接到任何已知服务');
+            }
+
+            this.isConnected = true;
+            this.updateUI();
+            this.updateStatus('connected', device.name);
+
+            // 监听设备断开
+            if (device._onDisconnect) {
+                device.removeEventListener('gattserverdisconnected', device._onDisconnect);
+            }
+            device._onDisconnect = () => this.handleDisconnect();
+            device.addEventListener('gattserverdisconnected', device._onDisconnect, { once: true });
+        }
+
         async disconnect() {
+            this.isManualDisconnect = true; // 标记为手动断开
             if (this.device && this.device.gatt.connected) {
                 await this.device.gatt.disconnect();
+            } else {
+                this.handleDisconnect();
             }
-            this.handleDisconnect();
         }
-        
+
         handleDisconnect() {
+            if (!this.isConnected && !this.reconnectTimer) return; // 避免重复触发
+
             this.isConnected = false;
+            // 清理DFU相关状态防止重连后使用失效对象
+            this.smpCharacteristic = null;
+            this.dfuManager = null;
+
             this.updateUI();
-            this.updateStatus('已断开', this.device.name);
-            
-            // 自动重连
-            if (this.autoReconnectEnabled) {
+            this.updateStatus('disconnected', this.device ? this.device.name : '');
+
+            // 自动重连：只有在开启了自动重连，且不是手动断开的情况下才触发
+            if (this.autoReconnectEnabled && !this.isManualDisconnect) {
                 this.scheduleReconnect();
             }
         }
-        
+
         scheduleReconnect() {
             if (this.reconnectTimer) {
                 clearTimeout(this.reconnectTimer);
             }
-            
-            this.reconnectTimer = setTimeout(() => {
-                if (this.autoReconnectEnabled && !this.isConnected) {
-                    this.updateStatus('自动重连中...');
-                    this.connect();
+
+            this.reconnectTimer = setTimeout(async () => {
+                this.reconnectTimer = null;
+                if (this.autoReconnectEnabled && !this.isConnected && !this.isManualDisconnect && this.device) {
+                    this.updateStatus('reconnecting', this.device.name);
+                    try {
+                        await this.establishConnection(this.device);
+                    } catch (e) {
+                        console.log('重连失败，3秒后重试:', e);
+                        this.scheduleReconnect();
+                    }
                 }
             }, 3000);
         }
-        
+
         handleReceive(event) {
             const value = event.target.value;
             const bytes = new Uint8Array(value.buffer);
-            
+
             this.receivedBytes += bytes.length;
             this.elements.receivedBytes.textContent = `接收: ${this.receivedBytes}`;
-            
+
             let content;
             if (this.elements.hexDisplay.checked) {
                 // HEX显示
@@ -641,12 +914,12 @@
                 const text = new TextDecoder('utf-8').decode(bytes);
                 content = this.processAnsiColors(text);
             }
-            
+
             // 添加到缓冲区
             this.pendingContent += content;
             this.scheduleUpdate();
         }
-        
+
         scheduleUpdate() {
             if (!this.updateTimer) {
                 this.updateTimer = setTimeout(() => {
@@ -655,45 +928,45 @@
                 }, this.updateInterval);
             }
         }
-        
+
         flushBuffer() {
             if (!this.pendingContent) return;
-            
+
             const output = this.elements.receiveOutput;
             const isAtBottom = output.scrollTop >= output.scrollHeight - output.clientHeight - 10;
-            
+
             // 性能优化：限制最大显示内容
             const currentContent = output.innerHTML;
             const currentSize = new Blob([currentContent]).size;
             const newContentSize = new Blob([this.pendingContent]).size;
-            
+
             if (currentSize + newContentSize > this.maxDisplaySize) {
                 // 删除旧内容（保留最后80%的内容）
                 const lines = currentContent.split('\n');
                 const linesToKeep = Math.floor(lines.length * 0.8);
                 output.innerHTML = lines.slice(-linesToKeep).join('\n');
             }
-            
+
             // 批量添加新内容
             output.innerHTML += this.pendingContent;
             this.pendingContent = '';
-            
+
             // 保持滚动到底部
             if (isAtBottom) {
                 output.scrollTop = output.scrollHeight;
             }
         }
-        
+
         processAnsiColors(text) {
             try {
                 let result = text;
-                
+
                 // 处理复杂格式如 \x1b[1;31m (粗体+红色)
                 const complexPattern = /\x1b\[(\d+);(\d+)m/g;
                 result = result.replace(complexPattern, (match, styleCode, colorCode) => {
                     const colorMap = {
                         '30': 'ansi-black',
-                        '31': 'ansi-red', 
+                        '31': 'ansi-red',
                         '32': 'ansi-green',
                         '33': 'ansi-yellow',
                         '34': 'ansi-blue',
@@ -701,7 +974,7 @@
                         '36': 'ansi-cyan',
                         '37': 'ansi-white'
                     };
-                    
+
                     const colorClass = colorMap[colorCode];
                     if (colorClass) {
                         if (styleCode === '1') {
@@ -711,7 +984,7 @@
                     }
                     return match;
                 });
-                
+
                 // 处理简单颜色格式
                 const simpleColorMap = {
                     '\x1b[30m': '<span class="ansi-black">',
@@ -725,22 +998,22 @@
                     '\x1b[0m': '</span>',
                     '\x1b[1m': '<span class="ansi-bold">'
                 };
-                
+
                 for (const [ansiCode, htmlTag] of Object.entries(simpleColorMap)) {
                     result = result.split(ansiCode).join(htmlTag);
                 }
-                
+
                 return result;
             } catch (error) {
                 console.warn('ANSI颜色处理失败:', error);
                 return text;
             }
         }
-        
+
         appendOutput(content) {
             const output = this.elements.receiveOutput;
             const isAtBottom = output.scrollTop >= output.scrollHeight - output.clientHeight - 10;
-            
+
             // 调试：检查内容中是否包含ANSI转义字符
             if (content.includes('\x1b[')) {
                 console.log('检测到ANSI转义字符:', content);
@@ -749,23 +1022,23 @@
                 console.log('原始内容:', JSON.stringify(content));
                 console.log('处理后内容:', processed);
             }
-            
+
             output.innerHTML += content;
-            
+
             // 保持滚动到底部
             if (isAtBottom) {
                 output.scrollTop = output.scrollHeight;
             }
         }
-        
+
         async sendData() {
             if (!this.isConnected || !this.sendCharacteristic) {
                 return;
             }
-            
+
             const input = this.elements.sendInput.value.trim();
             if (!input) return;
-            
+
             try {
                 let data;
                 if (this.elements.hexSend.checked) {
@@ -784,16 +1057,16 @@
                     }
                     data = new TextEncoder().encode(text);
                 }
-                
+
                 await this.sendCharacteristic.writeValue(data);
                 // this.elements.sendInput.value = '';
-                
+
             } catch (error) {
                 console.error('发送失败:', error);
                 alert('发送失败: ' + error.message);
             }
         }
-        
+
         clearOutput() {
             this.elements.receiveOutput.innerHTML = '';
             this.receivedBytes = 0;
@@ -804,7 +1077,7 @@
                 this.updateTimer = null;
             }
         }
-        
+
         // 添加页面卸载时的清理
         cleanup() {
             if (this.updateTimer) {
@@ -814,21 +1087,57 @@
                 clearTimeout(this.reconnectTimer);
             }
         }
-        
+
         refreshDisplay() {
             // 切换显示模式时重新显示已有内容
             // 这里可以实现更复杂的逻辑
         }
-        
+
         updateStatus(status, deviceName = '') {
-            this.elements.connectionStatus.textContent = status;
-            if (deviceName) {
-                this.elements.connectedDevice.textContent = ` : ${deviceName}`;
-            } else {
-                this.elements.connectedDevice.textContent = '';
+            const statusEl = this.elements.connectionStatus;
+
+            // 重置状态类
+            statusEl.className = '';
+
+            switch (status) {
+                case 'standby':
+                    statusEl.textContent = "未连接";
+                    statusEl.classList.add('status-info');
+                    break;
+                case 'scanning':
+                    statusEl.textContent = "扫描中...";
+                    statusEl.classList.add('status-connecting');
+                    break;
+                case 'connecting':
+                    statusEl.textContent = "连接...";
+                    statusEl.classList.add('status-connecting');
+                    break;
+                case 'connected':
+                    statusEl.textContent = "已连接";
+                    statusEl.classList.add('status-connected');
+                    break;
+                case 'reconnecting':
+                    statusEl.textContent = "重连...";
+                    statusEl.classList.add('status-connecting');
+                    break;
+                case 'disconnected':
+                    statusEl.textContent = "已断开";
+                    statusEl.classList.add('status-disconnected');
+                    break;
+                case 'cancelled':
+                    statusEl.textContent = "已取消";
+                    statusEl.classList.add('status-info');
+                    break;
+                case 'error':
+                    statusEl.textContent = "错误";
+                    statusEl.classList.add('status-error');
+                    break;
             }
+
+            this.elements.connectedDevice.textContent = ` ${deviceName}`;
+            this.elements.connectedDevice.className = statusEl.className;
         }
-        
+
         updateUI() {
             if (this.isConnected) {
                 this.elements.connectBtn.style.display = 'none';
@@ -846,6 +1155,759 @@
             this.elements.btnMotion.disabled = !this.isConnected;
             this.elements.btnWifiZone.disabled = !this.isConnected;
             this.elements.btnFence.disabled = !this.isConnected;
+
+            // 更新DFU按钮状态
+            // 更新DFU按钮状态
+            // 由于改为按需加载SMP服务，此处不再检查this.smpCharacteristic
+            const dfuReady = this.isConnected && this.firmwareData;
+            this.elements.dfuStartBtn.disabled = !dfuReady;
+        }
+
+        // === DFU 相关方法 ===
+
+        logDFU(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const line = `[${timestamp}] ${message}\n`;
+            this.pendingContent += `<span class="ansi-cyan">${line}</span>`;
+            this.scheduleUpdate();
+        }
+
+        async handleDFUFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            this.elements.dfuStatus.textContent = '';
+            this.elements.dfuStatus.className = 'dfu-status';
+
+            try {
+                let firmwareBytes;
+                let firmwareName;
+
+                if (file.name.endsWith('.zip')) {
+                    this.logDFU(`[DFU] 正在解压: ${file.name}`);
+                    const zip = await JSZip.loadAsync(file);
+                    // 查找固件文件
+                    const binNames = ['app_update.bin', 'zephyr.signed.bin'];
+                    let found = null;
+                    for (const name of binNames) {
+                        if (zip.files[name]) { found = name; break; }
+                    }
+                    if (!found) {
+                        // 查找任意.bin文件
+                        for (const fname in zip.files) {
+                            if (fname.endsWith('.bin') && !zip.files[fname].dir) {
+                                found = fname; break;
+                            }
+                        }
+                    }
+                    if (!found) throw new Error('ZIP中未找到.bin固件文件');
+                    firmwareBytes = await zip.files[found].async('uint8array');
+                    firmwareName = found;
+                } else {
+                    // 直接使用.bin文件
+                    const buf = await file.arrayBuffer();
+                    firmwareBytes = new Uint8Array(buf);
+                    firmwareName = file.name;
+                }
+
+                this.logDFU(`[DFU] 已加载固件: ${firmwareName} (${firmwareBytes.length} bytes)`);
+                this.firmwareData = firmwareBytes;
+                this.elements.dfuFileInfo.textContent = `${file.name}`;
+                this.elements.dfuFileInfo.title = file.name;
+                this.updateUI();
+
+            } catch (error) {
+                this.logDFU(`[DFU] 文件加载失败: ${error.message}`);
+                this.elements.dfuStatus.textContent = '文件错误';
+                this.elements.dfuStatus.className = 'dfu-status error';
+                this.firmwareData = null;
+                this.updateUI();
+            }
+        }
+
+        async ensureSMPService() {
+            if (this.smpCharacteristic && this.dfuManager) return true;
+            if (!this.isConnected) return false;
+
+            try {
+                this.logDFU('[SMP] 正在按需查找SMP服务: ' + this.SMP_SERVICE_UUID);
+                const smpService = await this.server.getPrimaryService(this.SMP_SERVICE_UUID);
+                this.logDFU('[SMP] SMP服务已找到，正在获取特征: ' + this.SMP_CHAR_UUID);
+                this.smpCharacteristic = await smpService.getCharacteristic(this.SMP_CHAR_UUID);
+
+                // 启用通知
+                await this.smpCharacteristic.startNotifications();
+                this.logDFU('[SMP] SMP通知已启用');
+
+                this.dfuManager = new DFUManager(this);
+                this.logDFU('[SMP] ✅ SMP DFU服务就绪');
+                return true;
+            } catch (e) {
+                this.logDFU('[SMP] ❌ 无法启用SMP服务: ' + e.message);
+                this.smpCharacteristic = null;
+                this.dfuManager = null;
+                return false;
+            }
+        }
+
+        async startDFU() {
+            this.logDFU('[DFU] === 开始DFU按钮被点击 ===');
+            this.logDFU(`[DFU] 状态检查: isConnected=${this.isConnected}, smpCharacteristic=${!!this.smpCharacteristic}, dfuManager=${!!this.dfuManager}, firmwareData=${!!this.firmwareData}${this.firmwareData ? '(' + this.firmwareData.length + ' bytes)' : ''}`);
+
+            if (!this.isConnected) {
+                this.logDFU('[DFU] ❌ 设备未连接，请先连接设备');
+                this.elements.dfuStatus.textContent = '未连接';
+                this.elements.dfuStatus.className = 'dfu-status error';
+                return;
+            }
+
+            // 尝试按需启用SMP服务
+            const smpReady = await this.ensureSMPService();
+            if (!smpReady) {
+                this.logDFU('[DFU] ❌ SMP服务不可用，无法继续升级');
+                this.elements.dfuStatus.textContent = 'SMP不可用';
+                this.elements.dfuStatus.className = 'dfu-status error';
+                return;
+            }
+
+            if (!this.dfuManager) {
+                this.logDFU('[DFU] ❌ DFU管理器未初始化');
+                this.elements.dfuStatus.textContent = 'DFU未就绪';
+                this.elements.dfuStatus.className = 'dfu-status error';
+                return;
+            }
+            if (!this.firmwareData) {
+                this.logDFU('[DFU] ❌ 未选择固件文件');
+                this.elements.dfuStatus.textContent = '未选择固件';
+                this.elements.dfuStatus.className = 'dfu-status error';
+                return;
+            }
+
+            this.logDFU('[DFU] 所有前置检查通过，开始DFU流程...');
+            this.elements.dfuStartBtn.style.display = 'none';
+            this.elements.dfuStopBtn.style.display = '';
+            this.elements.dfuProgressContainer.style.display = ''; // show progress
+
+            try {
+                await this.dfuManager.startDFU(this.firmwareData);
+            } catch (e) {
+                this.logDFU(`[DFU] ❌ 升级失败: ${e.message}`);
+                this.logDFU(`[DFU] 错误堆栈: ${e.stack || 'N/A'}`);
+                this.elements.dfuStatus.textContent = '升级失败';
+                this.elements.dfuStatus.className = 'dfu-status error';
+                this.elements.dfuStartBtn.style.display = ''; // re-enable start button on error
+                this.elements.dfuStopBtn.style.display = 'none';
+            }
+
+            // Note: startDFU logic handles successful completion internally, usually re-enabling buttons? 
+            // In dfuManager.startDFU, we might want to ensure UI is reset on success too.
+            // But let's assume dfuManager updates status.
+            // For safety, re-enable start button here if needed? 
+            // Actually dfuManager.startDFU throws on error, catches nothing? No, it throws.
+            // So if success, we reach here.
+            this.elements.dfuStartBtn.style.display = '';
+            this.elements.dfuStopBtn.style.display = 'none';
+            this.updateUI();
+        }
+
+        stopDFU() {
+            if (this.dfuManager) this.dfuManager.stopDFU();
+        }
+    }
+
+    // ===================== CBOR 编解码器 =====================
+
+    class CBOREncoder {
+        constructor() { this.buffer = []; }
+
+        result() { return new Uint8Array(this.buffer); }
+
+        _writeTypeAndLength(majorType, length) {
+            const mt = majorType << 5;
+            if (length < 24) {
+                this.buffer.push(mt | length);
+            } else if (length < 256) {
+                this.buffer.push(mt | 24, length);
+            } else if (length < 65536) {
+                this.buffer.push(mt | 25, (length >> 8) & 0xFF, length & 0xFF);
+            } else {
+                this.buffer.push(mt | 26,
+                    (length >> 24) & 0xFF, (length >> 16) & 0xFF,
+                    (length >> 8) & 0xFF, length & 0xFF);
+            }
+        }
+
+        encodeUint(value) {
+            this._writeTypeAndLength(0, value);
+            return this;
+        }
+
+        encodeBstr(bytes) {
+            this._writeTypeAndLength(2, bytes.length);
+            for (let i = 0; i < bytes.length; i++) this.buffer.push(bytes[i]);
+            return this;
+        }
+
+        encodeTstr(str) {
+            const encoded = new TextEncoder().encode(str);
+            this._writeTypeAndLength(3, encoded.length);
+            for (let i = 0; i < encoded.length; i++) this.buffer.push(encoded[i]);
+            return this;
+        }
+
+        encodeBool(val) {
+            this.buffer.push(val ? 0xF5 : 0xF4);
+            return this;
+        }
+
+        startMap() {
+            this.buffer.push(0xBF); // indefinite length map
+            return this;
+        }
+
+        endMap() {
+            this.buffer.push(0xFF); // break code
+            return this;
+        }
+    }
+
+    class CBORDecoder {
+        constructor(data) {
+            this.data = data instanceof Uint8Array ? data : new Uint8Array(data);
+            this.offset = 0;
+        }
+
+        _readTypeAndLength() {
+            if (this.offset >= this.data.length) return null;
+            const initial = this.data[this.offset++];
+            const majorType = initial >> 5;
+            const additional = initial & 0x1F;
+            let length;
+            if (additional < 24) length = additional;
+            else if (additional === 24) length = this.data[this.offset++];
+            else if (additional === 25) {
+                length = (this.data[this.offset] << 8) | this.data[this.offset + 1];
+                this.offset += 2;
+            } else if (additional === 26) {
+                length = (this.data[this.offset] << 24) | (this.data[this.offset + 1] << 16) |
+                    (this.data[this.offset + 2] << 8) | this.data[this.offset + 3];
+                this.offset += 4;
+            } else if (additional === 31) length = -1; // indefinite
+            else length = 0;
+            return { majorType, length };
+        }
+
+        decode() {
+            const tl = this._readTypeAndLength();
+            if (!tl) return undefined;
+            switch (tl.majorType) {
+                case 0: return tl.length; // uint
+                case 1: return -1 - tl.length; // negative int
+                case 2: { // bstr
+                    const val = this.data.slice(this.offset, this.offset + tl.length);
+                    this.offset += tl.length;
+                    return val;
+                }
+                case 3: { // tstr
+                    const val = new TextDecoder().decode(this.data.slice(this.offset, this.offset + tl.length));
+                    this.offset += tl.length;
+                    return val;
+                }
+                case 4: { // array
+                    const arr = [];
+                    if (tl.length === -1) {
+                        while (this.data[this.offset] !== 0xFF) arr.push(this.decode());
+                        this.offset++;
+                    } else {
+                        for (let i = 0; i < tl.length; i++) arr.push(this.decode());
+                    }
+                    return arr;
+                }
+                case 5: { // map
+                    const map = {};
+                    if (tl.length === -1) {
+                        while (this.data[this.offset] !== 0xFF) {
+                            const key = this.decode();
+                            const val = this.decode();
+                            map[key] = val;
+                        }
+                        this.offset++;
+                    } else {
+                        for (let i = 0; i < tl.length; i++) {
+                            const key = this.decode();
+                            const val = this.decode();
+                            map[key] = val;
+                        }
+                    }
+                    return map;
+                }
+                case 7: {
+                    if (tl.length === 20) return false;
+                    if (tl.length === 21) return true;
+                    if (tl.length === 22) return null;
+                    return undefined;
+                }
+                default: return undefined;
+            }
+        }
+    }
+
+    // ===================== DFU Manager =====================
+
+    class DFUManager {
+        constructor(debugger_) {
+            this.debugger = debugger_;
+            this.seq = 0;
+            this.running = false;
+            this.UPLOAD_CHUNK = 200; // 初始尝试较快速度，失败会自动降级
+            this._notifyHandler = null;
+            this._responseResolve = null;
+            this._responseBuffer = null;
+            this._responseTotalSize = 0;
+            this._responseOffset = 0;
+        }
+
+        _buildHeader(op, payloadLen, group, seq, id) {
+            return new Uint8Array([
+                op, 0,
+                (payloadLen >> 8) & 0xFF, payloadLen & 0xFF,
+                (group >> 8) & 0xFF, group & 0xFF,
+                seq, id
+            ]);
+        }
+
+        _findSubarray(data, sub) {
+            if (!sub || sub.length === 0) return -1;
+            const limit = data.length - sub.length;
+            for (let i = 0; i <= limit; i++) {
+                if (data[i] !== sub[0]) continue;
+                let match = true;
+                for (let j = 1; j < sub.length; j++) {
+                    if (data[i + j] !== sub[j]) {
+                        match = false;
+                        break;
+                    }
+                }
+                if (match) return i;
+            }
+            return -1;
+        }
+
+        async _sendCommand(header, payload, verbose = true) {
+            const cmd = new Uint8Array(header.length + (payload ? payload.length : 0));
+            cmd.set(header, 0);
+            if (payload) cmd.set(payload, header.length);
+
+            if (verbose) {
+                const hexHeader = Array.from(header).map(b => b.toString(16).padStart(2, '0')).join(' ');
+                this.debugger.logDFU(`[SMP TX] [${hexHeader}] header:(payloadLen = ${payload ? payload.length : 0}, total = ${cmd.length})`);
+            }
+
+            return new Promise((resolve, reject) => {
+                this._responseBuffer = new Uint8Array(4096);
+                this._responseTotalSize = 0;
+                this._responseOffset = 0;
+                this._responseResolve = resolve;
+
+                // 设置超时
+                const timeout = setTimeout(() => {
+                    this.debugger.logDFU('[SMP] ❌ 响应超时 (15s)');
+                    this._cleanup();
+                    reject(new Error('SMP响应超时'));
+                }, 15000);
+
+                this._notifyHandler = (event) => {
+                    const data = new Uint8Array(event.target.value.buffer);
+
+                    // 拷贝数据到缓冲区
+                    if (this._responseOffset + data.length > this._responseBuffer.length) {
+                        // 扩展缓冲区
+                        const newBuf = new Uint8Array(this._responseBuffer.length * 2);
+                        newBuf.set(this._responseBuffer);
+                        this._responseBuffer = newBuf;
+                    }
+                    this._responseBuffer.set(data, this._responseOffset);
+
+                    if (this._responseOffset === 0 && data.length >= 8) {
+                        // 第一个通知包，解析包头获取总长度
+                        const payloadLen = (data[2] << 8) | data[3];
+                        this._responseTotalSize = payloadLen + 8;
+                        if (verbose) {
+                            const rxHex = Array.from(data.slice(0, Math.min(8, data.length))).map(b => b.toString(16).padStart(2, '0')).join(' ');
+                            this.debugger.logDFU(`[SMP RX] [${rxHex}] header:(payloadLen = ${payloadLen}, expect total = ${this._responseTotalSize})`);
+                        }
+                    }
+
+                    this._responseOffset += data.length;
+
+                    if (this._responseOffset >= this._responseTotalSize && this._responseTotalSize > 0) {
+                        clearTimeout(timeout);
+                        const result = this._responseBuffer.slice(0, this._responseOffset);
+                        // if (verbose) this.debugger.logDFU(`[SMP RX] 接收完成: ${this._responseOffset}`);
+                        this._cleanupNotify();
+                        resolve(result);
+                    }
+                };
+
+                // 注册通知处理（通知已在连接时启用）
+                const char = this.debugger.smpCharacteristic;
+                char.addEventListener('characteristicvaluechanged', this._notifyHandler);
+
+                // 直接写入命令（通知已经在连接阶段启用）
+                char.writeValueWithoutResponse(cmd).then(() => {
+                    // if (verbose) this.debugger.logDFU(`[SMP TX] 写入成功, 等待响应...`);
+                }).catch(err => {
+                    this.debugger.logDFU(`[SMP TX] ❌ 写入失败: ${err.message}`);
+                    clearTimeout(timeout);
+                    this._cleanupNotify();
+                    reject(err);
+                });
+            });
+        }
+
+        _cleanupNotify() {
+            if (this._notifyHandler) {
+                try {
+                    this.debugger.smpCharacteristic.removeEventListener(
+                        'characteristicvaluechanged', this._notifyHandler);
+                } catch (e) { }
+                this._notifyHandler = null;
+            }
+        }
+
+        _cleanup() {
+            this._cleanupNotify();
+            this._responseResolve = null;
+        }
+
+        _parseResponse(raw) {
+            // raw: header(8) + payload
+            const header = {
+                op: raw[0], flags: raw[1],
+                payloadLen: (raw[2] << 8) | raw[3],
+                group: (raw[4] << 8) | raw[5],
+                seq: raw[6], id: raw[7]
+            };
+            const payload = raw.slice(8, 8 + header.payloadLen);
+            let decoded;
+            try {
+                const decoder = new CBORDecoder(payload);
+                decoded = decoder.decode();
+            } catch (e) { decoded = {}; }
+            return { header, decoded };
+        }
+
+        async imageList() {
+            this.debugger.logDFU('[DFU] === 步骤: Image List (OP = 0, Group = 1, ID = 0) ===');
+            const header = this._buildHeader(0, 0, 1, this.seq++, 0);
+            const raw = await this._sendCommand(header, null);
+            const rsp = this._parseResponse(raw);
+            const jsonHexReplacer = function (key, value) {
+                if (this[key] instanceof Uint8Array) {
+                    return Array.from(this[key]).map(b => b.toString(16).padStart(2, '0')).join('');
+                }
+                return value;
+            };
+            this.debugger.logDFU(`[DFU] Image List 响应header: op = ${rsp.header.op}, group = ${rsp.header.group}, id = ${rsp.header.id}, rc/payload = ${JSON.stringify(rsp.decoded, jsonHexReplacer)}`);
+            return rsp.decoded;
+        }
+
+        async imageUpload(firmwareData) {
+            const totalLen = firmwareData.length;
+            let offset = 0;
+            let seq = 0;
+
+            this.debugger.logDFU(`[DFU] === 步骤: Image Upload (OP = 2, Group = 1, ID = 1) ===`);
+            this.debugger.logDFU(`[DFU] 固件大小: ${totalLen} bytes`);
+
+            // 显示固件头部信息（MCUboot magic等）
+            if (totalLen >= 32) {
+                const headerHex = Array.from(firmwareData.slice(0, 32)).map(b => b.toString(16).padStart(2, '0')).join(' ');
+                this.debugger.logDFU(`[DFU] 固件头32字节: ${headerHex}`);
+            }
+
+            const startTime = Date.now();
+            let retryCount = 0;
+            const MAX_RETRIES = 3;
+
+            while (offset < totalLen && this.running) {
+                let chunkSize = Math.min(this.UPLOAD_CHUNK, totalLen - offset);
+                // 特殊处理第一包：由于包含额外元数据(len/sha等)，需要预留更多空间
+                // 如果是第一包且chunkSize接近max，强制减小一点以容纳header
+                if (offset === 0 && chunkSize > 200) {
+                    chunkSize = 200;
+                }
+
+                const chunk = firmwareData.slice(offset, offset + chunkSize);
+
+                // CBOR编码payload
+                const enc = new CBOREncoder();
+                enc.startMap();
+                enc.encodeTstr('data');
+                enc.encodeBstr(chunk);
+                if (offset === 0) {
+                    enc.encodeTstr('len');
+                    enc.encodeUint(totalLen);
+                    enc.encodeTstr('sha');
+                    // SHA可以为空字节串，设备端会自行计算
+                    enc.encodeBstr(new Uint8Array(0));
+                    // this.debugger.logDFU(`[DFU] 首包: 包含len=${totalLen}`);
+                }
+                enc.encodeTstr('off');
+                enc.encodeUint(offset);
+                enc.endMap();
+
+                const payload = enc.result();
+                const header = this._buildHeader(2, payload.length, 1, seq & 0xFF, 1);
+
+                try {
+                    // 对于upload命令，默认不再打印详细日志以提升速度
+                    // 第一包还是打印一下以便调试
+                    const verbose = (offset === 0);
+                    const raw = await this._sendCommand(header, payload, verbose);
+                    const rsp = this._parseResponse(raw);
+
+                    if (rsp.decoded && rsp.decoded.rc !== undefined && rsp.decoded.rc !== 0) {
+                        this.debugger.logDFU(`[DFU] ❌ 设备返回错误: rc = ${rsp.decoded.rc}, 完整响应: ${JSON.stringify(rsp.decoded)}`);
+                        throw new Error(`设备返回错误码: ${rsp.decoded.rc}`);
+                    }
+
+                    // 检查设备返回的offset
+                    if (rsp.decoded && rsp.decoded.off !== undefined) {
+                        const deviceOffset = rsp.decoded.off;
+                        if (deviceOffset !== offset + chunkSize) {
+                            // this.debugger.logDFU(`[DFU] ⚠ 设备期望offset=${deviceOffset}, 本地计算=${offset + chunkSize}, 使用设备值`);
+                            offset = deviceOffset;
+                        } else {
+                            offset += chunkSize;
+                        }
+                    } else {
+                        offset += chunkSize;
+                    }
+
+                    seq++;
+                    retryCount = 0; // 成功则重置重试计数
+
+                    // 更新进度
+                    const percent = Math.floor((offset / totalLen) * 100);
+                    this.debugger.elements.dfuProgressBar.style.width = percent + '%';
+
+                    const elapsed = (Date.now() - startTime) / 1000;
+                    const speed = offset / elapsed / 1024;
+                    const eta = elapsed / offset * (totalLen - offset);
+                    this.debugger.elements.dfuProgressText.textContent =
+                        // `${percent}% (${(offset / 1024).toFixed(1)}/${(totalLen / 1024).toFixed(1)}KB)`;
+                        `${percent}% (${speed.toFixed(1)}KB/s)`;
+
+                    // 每20个块打印一次进度
+                    if (seq % 20 === 0 || offset >= totalLen) {
+                        // this.debugger.logDFU(`[DFU] 上传进度: ${percent}% (${offset}/${totalLen}) 速度:${speed.toFixed(1)}KB/s ETA:${eta.toFixed(0)}s`);
+                    }
+                } catch (e) {
+                    const errStr = e.toString();
+                    if (errStr.includes("GATT operation failed") || errStr.includes("NetworkError")) {
+                        // 可能是MTU限制，尝试降低 chunk size
+                        if (this.UPLOAD_CHUNK > 128) {
+                            const newSize = Math.max(128, Math.floor(this.UPLOAD_CHUNK * 0.7)); // 降低30%
+                            this.debugger.logDFU(`[DFU] ⚠ 写入失败(${e.message})，尝试降低分块大小: ${this.UPLOAD_CHUNK} -> ${newSize}`);
+                            this.UPLOAD_CHUNK = newSize;
+                            await new Promise(r => setTimeout(r, 500)); // 稍作延时
+                            continue; // 重试当前块（使用新的大小重新切片）
+                        }
+                    }
+
+                    retryCount++;
+                    this.debugger.logDFU(`[DFU] ⚠ 写入重试 (${retryCount}/${MAX_RETRIES}) @offset=${offset}: ${e.message}`);
+
+                    if (retryCount >= MAX_RETRIES) {
+                        this.debugger.logDFU(`[DFU] ❌ 重试失败，终止上传`);
+                        throw new Error(`上传块失败 @offset=${offset}: ${e.message}`);
+                    }
+
+                    await new Promise(r => setTimeout(r, 1000));
+                }
+            }
+
+            if (!this.running) throw new Error('DFU已被用户停止');
+
+            const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
+            const avgSpeed = (totalLen / 1024 / (Date.now() - startTime) * 1000).toFixed(1);
+            this.debugger.logDFU(`[DFU] ✅ 固件上传完成! 用时:${totalTime}s 平均速度:${avgSpeed}KB/s`);
+        }
+
+        async imageTest(hash, confirm = false) {
+            this.debugger.logDFU(`[DFU] === 步骤: Image ${confirm ? 'Confirm' : 'Test'} (OP = 2, Group = 1, ID = 0) ===`);
+            if (hash) {
+                const hashHex = Array.from(hash).map(b => b.toString(16).padStart(2, '0')).join('');
+                this.debugger.logDFU(`[DFU] Hash:[${hashHex}]`);
+            } else {
+                this.debugger.logDFU('[DFU] ⚠ 未获取到hash，使用空hash');
+            }
+            const enc = new CBOREncoder();
+            enc.startMap();
+            enc.encodeTstr('confirm');
+            enc.encodeBool(confirm);
+            enc.encodeTstr('hash');
+            if (hash && hash.length > 0) {
+                enc.encodeBstr(hash);
+            } else {
+                enc.encodeBstr(new Uint8Array(32)); // placeholder
+            }
+            enc.endMap();
+
+            const payload = enc.result();
+            const header = this._buildHeader(2, payload.length, 1, this.seq++, 0);
+            const raw = await this._sendCommand(header, payload);
+            const rsp = this._parseResponse(raw);
+            this.debugger.logDFU(`[DFU] ${confirm ? 'Confirm' : 'Test'}响应: header(op = ${rsp.header.op}, rc/payload = ${JSON.stringify(rsp.decoded)})`);
+            return rsp.decoded;
+        }
+
+        async deviceReset() {
+            this.debugger.logDFU('[DFU] === 步骤: Device Reset (OP = 2, Group = 0, ID = 5) ===');
+            const enc = new CBOREncoder();
+            enc.startMap();
+            enc.endMap();
+            const payload = enc.result();
+            const header = this._buildHeader(2, payload.length, 0, this.seq++, 5);
+            try {
+                const raw = await this._sendCommand(header, payload);
+                const rsp = this._parseResponse(raw);
+                this.debugger.logDFU(`[DFU] Reset响应: ${JSON.stringify(rsp.decoded)}`);
+            } catch (e) {
+                // 设备可能在复位时断开连接，这是正常的
+                this.debugger.logDFU(`[DFU] 设备复位中 (${e.message}) - 连接中断为正常现象`);
+            }
+        }
+
+        async startDFU(firmwareData) {
+            this.running = true;
+            this.seq = 0;
+            const statusEl = this.debugger.elements.dfuStatus;
+            const startTime = Date.now();
+
+            this.debugger.logDFU('[DFU] ========================================');
+            this.debugger.logDFU('[DFU] ===       DFU升级流程开始           ===');
+            this.debugger.logDFU('[DFU] ========================================');
+            this.debugger.logDFU(`[DFU] 固件大小: ${firmwareData.length}`);
+            statusEl.textContent = '升级中...';
+            statusEl.className = 'dfu-status';
+
+            try {
+                // 步骤1: 查询当前固件
+                this.debugger.logDFU('[DFU] [1/5] 查询当前设备固件信息...');
+                const listResult = await this.imageList();
+
+                // 提取secondary slot的hash（如有）
+                let secondaryHash = null;
+                // 步骤1.5: 检查是否可以复用现有镜像
+                let skipUpload = false;
+
+                if (listResult && listResult.images) {
+                    this.debugger.logDFU(`[DFU] 发现 ${listResult.images.length} 个image slot`);
+                    for (const img of listResult.images) {
+                        const hashStr = img.hash ? Array.from(img.hash).map(b => b.toString(16).padStart(2, '0')).join('') : 'none';
+                        this.debugger.logDFU(`[DFU]   slot = ${img.slot}, version = ${img.version}, active = ${img.active}, pending = ${img.pending}, confirmed = ${img.confirmed}, bootable = ${img.bootable}, hash = ${hashStr}`);
+
+                        if (img.slot === 1 && img.hash) {
+                            secondaryHash = img.hash;
+                        }
+
+                        // 1. 总是确保当前运行的Slot 0已确认 (防止rc=6错误)
+                        if (img.slot === 0 && img.active && !img.confirmed) {
+                            this.debugger.logDFU('[DFU] ⚠ 检测到当前固件未确认(测试模式)，正在执行自动确认...');
+                            await this.imageTest(img.hash, true);
+                            img.confirmed = true;
+                            this.debugger.logDFU('[DFU] ✅ 当前固件已确认');
+                        }
+
+                        // 2. 检查是否匹配目标固件
+                        try {
+                            if (!skipUpload && img.hash && this._findSubarray(firmwareData, img.hash) !== -1) {
+                                const hashStr = Array.from(img.hash).map(b => b.toString(16).padStart(2, '0')).join('');
+                                this.debugger.logDFU(`[DFU] 🔎 发现固件文件包含设备Slot ${img.slot}的Hash(${hashStr})，判定为相同版本`);
+
+                                if (img.slot === 0) {
+                                    this.debugger.logDFU('[DFU] ✅ 目标固件已是当前运行版本 (Slot 0)，无需升级');
+                                    skipUpload = true;
+                                } else if (img.slot === 1) {
+                                    this.debugger.logDFU('[DFU] ✅ 目标固件已存在于Slot 1，直接执行切换...');
+                                    await this.imageTest(img.hash, true);
+                                    this.debugger.logDFU('[DFU] 切换指令已发送，正在复位设备...');
+                                    await this.deviceReset();
+                                    skipUpload = true;
+                                }
+                            }
+                        } catch (err) {
+                            console.warn('Hash compare error', err);
+                        }
+                    }
+                } else {
+                    this.debugger.logDFU('[DFU] ⚠ 未收到images信息，继续上传...');
+                }
+
+                if (skipUpload) {
+                    this.debugger.logDFU(`[DFU] ✅ DFU操作完成 (通过快速验证/切换)!`);
+                    const statusEl = this.debugger.elements.dfuStatus;
+                    statusEl.textContent = '完成';
+                    statusEl.className = 'dfu-status success';
+                    this.running = false;
+                    return;
+                }
+
+                // 步骤2: 上传固件
+                this.debugger.logDFU('[DFU] [2/5] 上传固件...');
+                await this.imageUpload(firmwareData);
+
+                // 步骤3: 再次list获取新image hash
+                this.debugger.logDFU('[DFU] [3/5] 重新查询固件信息获取新hash...');
+                const listResult2 = await this.imageList();
+                let newHash = null;
+                if (listResult2 && listResult2.images) {
+                    for (const img of listResult2.images) {
+                        const hashStr = img.hash ? Array.from(img.hash).map(b => b.toString(16).padStart(2, '0')).join('') : 'none';
+                        this.debugger.logDFU(`[DFU]   slot = ${img.slot}, version = ${img.version}, active = ${img.active}, pending = ${img.pending}, confirmed = ${img.confirmed}, bootable = ${img.bootable}, hash = ${hashStr}`);
+                        if (img.slot === 1 && img.hash) {
+                            newHash = img.hash instanceof Uint8Array ? img.hash : new Uint8Array(0);
+                        }
+                    }
+                }
+                if (!newHash) {
+                    this.debugger.logDFU('[DFU] ⚠ 未获取到slot 1的hash');
+                }
+
+                // 步骤4: Test image (Confirm Only Mode)
+                this.debugger.logDFU('[DFU] [4/5] 标记新固件为永久(Confirm)...');
+                await this.imageTest(newHash, true);
+
+                // 步骤5: Reset
+                this.debugger.logDFU('[DFU] [5/5] 复位设备以应用新固件...');
+                await this.deviceReset();
+
+                const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+                this.debugger.logDFU('[DFU] ========================================');
+                this.debugger.logDFU(`[DFU] ✅ DFU升级完成! 用时: ${elapsed}s`);
+                this.debugger.logDFU('[DFU] ========================================');
+                statusEl.textContent = `升级完成 (${elapsed}s)`;
+                statusEl.className = 'dfu-status success';
+
+            } catch (e) {
+                this.debugger.logDFU(`[DFU] ❌ DFU失败: ${e.message}`);
+                this.debugger.logDFU(`[DFU] 错误堆栈: ${e.stack || 'N/A'}`);
+                statusEl.textContent = '升级失败';
+                statusEl.className = 'dfu-status error';
+                throw e;
+            } finally {
+                this.running = false;
+                this._cleanup();
+            }
+        }
+
+        stopDFU() {
+            this.running = false;
+            this.debugger.logDFU('[DFU] 用户停止了DFU');
+            this.debugger.elements.dfuStatus.textContent = '已停止';
+            this.debugger.elements.dfuStatus.className = 'dfu-status error';
         }
     }
 
@@ -856,7 +1918,7 @@
             alert('您的浏览器不支持Web Bluetooth API，请使用Chrome、Edge或Opera浏览器。');
             return;
         }
-        
+
         new BluetoothSerialDebugger();
     });
 </script>
