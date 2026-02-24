@@ -154,7 +154,7 @@
 
         .receive-header {
             /* padding: 5px; */
-            border-bottom: 1px solid #3c3c3c;
+            border-bottom: 5px solid #1e1e1e;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -294,7 +294,7 @@
             }
 
             .connection-panel {
-                padding: 5px;
+                /* padding: 5px; */
                 gap: 5px;
             }
 
@@ -314,8 +314,13 @@
                 padding: 5px;
             }
 
+            .clear-btn {
+                font-size: 12px;
+                padding: 4px 12px;
+            }
+
             .send-panel {
-                padding: 5px;
+                /* padding: 5px; */
                 gap: 5px;
             }
 
@@ -326,7 +331,7 @@
 
             .send-btn {
                 font-size: 12px;
-                padding: 6px 12px;
+                padding: 4px 12px;
             }
         }
 
@@ -403,12 +408,18 @@
         .dfu-panel {
             background-color: #2d2d30;
             border-radius: 5px;
-            margin-bottom: 5px;
-            /* padding: 5px 8px; */
+            /* margin-bottom: 5px; */
+            /* padding: 8px; */
             display: flex;
-            gap: 6px;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .dfu-row {
+            display: flex;
+            gap: 10px;
             align-items: center;
-            flex-wrap: wrap;
+            width: 100%;
         }
 
         .dfu-panel input[type="file"] {
@@ -477,17 +488,17 @@
         .dfu-progress {
             flex: 1;
             min-width: 120px;
-            height: 18px;
-            background-color: #1e1e1e;
-            border-radius: 9px;
-            overflow: hidden;
+            height: 20px;
+            background-color: #4a4a4a;
+            /* border-radius: 9px; */
+            /* overflow: hidden; */
             position: relative;
         }
 
         .dfu-progress-bar {
             height: 100%;
             background: linear-gradient(90deg, #0e639c, #3fb950);
-            border-radius: 9px;
+            /* border-radius: 9px; */
             transition: width 0.2s ease;
             width: 0%;
         }
@@ -542,20 +553,6 @@
             </div>
         </div>
 
-        <!-- DFU区域 -->
-        <div class="dfu-panel" id="dfuPanel" style="display: none;">
-            <input type="file" id="dfuFile" accept=".zip,.bin">
-            <button class="dfu-file-btn" id="dfuFileBtn">选择固件</button>
-            <span class="dfu-file-info" id="dfuFileInfo">未选择文件</span>
-            <button class="dfu-start-btn" id="dfuStartBtn" disabled>开始DFU</button>
-            <button class="dfu-stop-btn" id="dfuStopBtn" style="display:none">停止</button>
-            <div class="dfu-progress" id="dfuProgressContainer" style="display:none">
-                <div class="dfu-progress-bar" id="dfuProgressBar"></div>
-                <span class="dfu-progress-text" id="dfuProgressText">0%</span>
-            </div>
-            <span class="dfu-status" id="dfuStatus"></span>
-        </div>
-
         <!-- 接收区域 -->
         <div class="receive-panel">
             <div class="receive-header">
@@ -563,7 +560,7 @@
                 <div class="receive-controls">
                     <div class="checkbox-container" style="margin-left: 10px;">
                         <input type="checkbox" id="dfuToggle">
-                        <label for="dfuToggle">DFU模式</label>
+                        <label for="dfuToggle">DFU</label>
                     </div>
                     <div class="checkbox-container">
                         <input type="checkbox" id="hexDisplay">
@@ -574,6 +571,25 @@
                         <label for="autoReconnect">自动重连</label>
                     </div>
                     <button id="clearBtn" class="clear-btn">清除</button>
+                </div>
+            </div>
+
+            <!-- DFU区域 -->
+            <div class="dfu-panel" id="dfuPanel" style="display: none;">
+                <div class="dfu-row">
+                    <input type="file" id="dfuFile" accept=".zip,.bin">
+                    <button class="dfu-file-btn" id="dfuFileBtn">选择固件</button>
+                    <span class="dfu-file-info" id="dfuFileInfo">未选择文件</span>
+                    <div style="flex: 1;"></div>
+                    <span class="dfu-status" id="dfuStatus"></span>
+                </div>
+                <div class="dfu-row">
+                    <button class="dfu-start-btn" id="dfuStartBtn" disabled>开始DFU</button>
+                    <button class="dfu-stop-btn" id="dfuStopBtn" style="display:none">停止</button>
+                    <div class="dfu-progress" id="dfuProgressContainer">
+                        <div class="dfu-progress-bar" id="dfuProgressBar"></div>
+                        <span class="dfu-progress-text" id="dfuProgressText">0%</span>
+                    </div>
                 </div>
             </div>
             <div id="receiveOutput" class="receive-output"></div>
@@ -727,6 +743,7 @@
         sendCustomCommand(command) {
             if (!this.isConnected || !this.sendCharacteristic) {
                 console.warn('设备未连接，无法发送命令');
+                this.log_w('设备未连接，无法发送命令');
                 return;
             }
 
@@ -823,6 +840,9 @@
                     // 获取特征值
                     this.receiveCharacteristic = await service.getCharacteristic(serviceConfig.receiveCharUuid);
                     this.sendCharacteristic = await service.getCharacteristic(serviceConfig.sendCharUuid);
+                    this.log_i(`   服务ID: ${serviceConfig.uuid} 连接成功`);
+                    this.log_i(`RX 特征ID: ${serviceConfig.receiveCharUuid} 获取成功`);
+                    this.log_i(`TX 特征ID: ${serviceConfig.sendCharUuid} 获取成功`);
 
                     // 启用通知
                     await this.receiveCharacteristic.startNotifications();
@@ -832,6 +852,7 @@
                     break;
                 } catch (error) {
                     console.log(`服务 ${serviceConfig.uuid} 连接失败:`, error);
+                    this.log_e(`服务 ${serviceConfig.uuid} 连接失败: ${error}`);
                     continue;
                 }
             }
@@ -843,6 +864,7 @@
             this.isConnected = true;
             this.updateUI();
             this.updateStatus('connected', device.name);
+            this.log_i(`已连接"${device.name}"`);
 
             // 监听设备断开
             if (device._onDisconnect) {
@@ -871,6 +893,7 @@
 
             this.updateUI();
             this.updateStatus('disconnected', this.device ? this.device.name : '');
+            this.log_w(`"${this.device.name}" 断开连接`);
 
             // 自动重连：只有在开启了自动重连，且不是手动断开的情况下才触发
             if (this.autoReconnectEnabled && !this.isManualDisconnect) {
@@ -878,7 +901,7 @@
             }
         }
 
-        scheduleReconnect() {
+        scheduleReconnect(delay = 100) {
             if (this.reconnectTimer) {
                 clearTimeout(this.reconnectTimer);
             }
@@ -887,14 +910,16 @@
                 this.reconnectTimer = null;
                 if (this.autoReconnectEnabled && !this.isConnected && !this.isManualDisconnect && this.device) {
                     this.updateStatus('reconnecting', this.device.name);
+                    this.log_i(`"${this.device.name}" 正在重连...`);
                     try {
                         await this.establishConnection(this.device);
                     } catch (e) {
-                        console.log('重连失败，3秒后重试:', e);
-                        this.scheduleReconnect();
+                        console.log('重连失败，1秒后重试:', e);
+                        this.log_e(`重连失败，1秒后重试: ${e}`);
+                        this.scheduleReconnect(1000);
                     }
                 }
-            }, 3000);
+            }, delay);
         }
 
         handleReceive(event) {
@@ -1029,6 +1054,62 @@
             if (isAtBottom) {
                 output.scrollTop = output.scrollHeight;
             }
+        }
+
+        // 独立的log接口，用于将调试信息输出到接收框，带有颜色分类
+        logMessage(level, message) {
+            let colorClass = 'ansi-white';
+            let levelChar = '';
+            switch (level.toLowerCase()) {
+                case 'info':
+                    colorClass = 'ansi-green'; // 绿色表示信息
+                    levelChar = 'I';
+                    break;
+                case 'warn':
+                case 'warning':
+                    colorClass = 'ansi-yellow'; // 黄色表示警告
+                    levelChar = 'W';
+                    break;
+                case 'error':
+                    colorClass = 'ansi-red'; // 红色表示错误
+                    levelChar = 'E';
+                    break;
+                case 'debug':
+                    colorClass = 'ansi-cyan'; // 青色表示调试
+                    levelChar = 'D';
+                    break;
+                default:
+                    colorClass = 'ansi-white'; // 默认白色
+                    levelChar = 'I';
+            }
+
+            const timestamp = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+            // 构建带颜色标签的HTML片段
+            const formattedContent = `<span class="${colorClass}">[${timestamp}] [${levelChar}] ${message}</span>\n`;
+
+            this.pendingContent += formattedContent;
+            this.scheduleUpdate();
+        }
+
+        log_i(message) {
+            this.logMessage('info', message);
+        }
+
+        log_w(message) {
+            this.logMessage('warn', message);
+        }
+
+        log_e(message) {
+            this.logMessage('error', message);
+        }
+
+        log_d(message) {
+            this.logMessage('debug', message);
+        }
+
+        log_r(message) {
+            this.pendingContent += message;
+            this.scheduleUpdate();
         }
 
         async sendData() {
@@ -1689,7 +1770,7 @@
                     retryCount = 0; // 成功则重置重试计数
 
                     // 更新进度
-                    const percent = Math.floor((offset / totalLen) * 100);
+                    const percent = ((offset / totalLen) * 100).toFixed(1);
                     this.debugger.elements.dfuProgressBar.style.width = percent + '%';
 
                     const elapsed = (Date.now() - startTime) / 1000;
@@ -1840,6 +1921,7 @@
                             }
                         } catch (err) {
                             console.warn('Hash compare error', err);
+                            this.log_w('Hash compare error', err);
                         }
                     }
                 } else {
@@ -1849,6 +1931,8 @@
                 if (skipUpload) {
                     this.debugger.logDFU(`[DFU] ✅ DFU操作完成 (通过快速验证/切换)!`);
                     const statusEl = this.debugger.elements.dfuStatus;
+                    this.debugger.elements.dfuProgressBar.style.width = 100 + '%';
+                    this.debugger.elements.dfuProgressText.textContent = '100%';
                     statusEl.textContent = '完成';
                     statusEl.className = 'dfu-status success';
                     this.running = false;
