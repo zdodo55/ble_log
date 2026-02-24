@@ -309,9 +309,13 @@
             }
 
             .receive-output {
-                font-size: 10px;
+                font-size: 10px !important;
                 /* 手机移动端字体大小 */
                 padding: 5px;
+            }
+
+            .receive-output span {
+                font-size: 10px !important;
             }
 
             .clear-btn {
@@ -616,6 +620,7 @@
             <button id="btnMotion" class="custom-btn" disabled>运动状态</button>
             <button id="btnWifiZone" class="custom-btn" disabled>WiFi-Zone</button>
             <button id="btnFence" class="custom-btn" disabled>围栏</button>
+            <button id="btnReboot" class="custom-btn" disabled>重启</button>
         </div>
     </div>
 
@@ -692,6 +697,7 @@
                 btnMotion: document.getElementById('btnMotion'),
                 btnWifiZone: document.getElementById('btnWifiZone'),
                 btnFence: document.getElementById('btnFence'),
+                btnReboot: document.getElementById('btnReboot'),
                 // DFU元素
                 dfuFile: document.getElementById('dfuFile'),
                 dfuFileBtn: document.getElementById('dfuFileBtn'),
@@ -733,6 +739,7 @@
             this.elements.btnMotion.addEventListener('click', () => this.sendCustomCommand('gsensor snapshot'));
             this.elements.btnWifiZone.addEventListener('click', () => this.sendCustomCommand('wifizone'));
             this.elements.btnFence.addEventListener('click', () => this.sendCustomCommand('fence'));
+            this.elements.btnReboot.addEventListener('click', () => this.sendCustomCommand('reboot'));
 
             this.elements.hexDisplay.addEventListener('change', () => this.refreshDisplay());
             this.elements.autoReconnect.addEventListener('change', (e) => {
@@ -864,7 +871,7 @@
             this.isConnected = true;
             this.updateUI();
             this.updateStatus('connected', device.name);
-            this.log_i(`已连接"${device.name}"`);
+            this.log_i(`已连接 ${device.name}`);
 
             // 监听设备断开
             if (device._onDisconnect) {
@@ -893,7 +900,7 @@
 
             this.updateUI();
             this.updateStatus('disconnected', this.device ? this.device.name : '');
-            this.log_w(`"${this.device.name}" 断开连接`);
+            this.log_w(`"${this.device.name}" 已断开连接`);
 
             // 自动重连：只有在开启了自动重连，且不是手动断开的情况下才触发
             if (this.autoReconnectEnabled && !this.isManualDisconnect) {
@@ -1236,6 +1243,7 @@
             this.elements.btnMotion.disabled = !this.isConnected;
             this.elements.btnWifiZone.disabled = !this.isConnected;
             this.elements.btnFence.disabled = !this.isConnected;
+            this.elements.btnReboot.disabled = !this.isConnected;
 
             // 更新DFU按钮状态
             // 更新DFU按钮状态
