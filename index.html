@@ -112,6 +112,7 @@
         .status-info {
             font-size: 12px;
             color: white;
+            cursor: pointer;
         }
 
         .status-connected {
@@ -501,7 +502,7 @@
 
         .dfu-progress-bar {
             height: 100%;
-            background: linear-gradient(90deg, #0e639c, #3fb950);
+            background-color: #3fb950;
             /* border-radius: 9px; */
             transition: width 0.2s ease;
             width: 0%;
@@ -546,7 +547,7 @@
             <div class="connection-left">
                 <label>过滤:</label>
                 <input type="text" id="deviceNameFilter" placeholder="蓝牙名称过滤" value="Pet_">
-                <div class="status-info">
+                <div class="status-info" title="点击重新连接">
                     <span id="connectionStatus">未连接</span>
                     <span id="connectedDevice"></span>
                 </div>
@@ -679,6 +680,7 @@
                 deviceNameFilter: document.getElementById('deviceNameFilter'),
                 connectionStatus: document.getElementById('connectionStatus'),
                 connectedDevice: document.getElementById('connectedDevice'),
+                statusInfo: document.querySelector('.status-info'),
                 dfuToggle: document.getElementById('dfuToggle'),
                 autoReconnect: document.getElementById('autoReconnect'),
                 connectBtn: document.getElementById('connectBtn'),
@@ -716,6 +718,7 @@
         bindEvents() {
             this.elements.connectBtn.addEventListener('click', () => this.connect());
             this.elements.disconnectBtn.addEventListener('click', () => this.disconnect());
+            this.elements.statusInfo.addEventListener('click', () => this.reconnectPreviousDevice());
             this.elements.clearBtn.addEventListener('click', () => this.clearOutput());
             this.elements.sendBtn.addEventListener('click', () => this.sendData());
             this.elements.sendInput.addEventListener('keypress', (e) => {
@@ -810,6 +813,40 @@
             this.updateUI();
         }
 
+        async reconnectPreviousDevice() {
+            if (!this.isConnected && this.device) {
+                this.isManualDisconnect = false;
+                this.updateStatus('connecting', this.device.name);
+                this.log_w(`"${this.device.name}" 正在尝试重新连接...`);
+
+                // 确保先前的连接句柄在浏览器侧已彻底释放
+                if (this.device.gatt && this.device.gatt.connected) {
+                    try { this.device.gatt.disconnect(); } catch (e) { }
+                }
+
+                let retries = 3;
+                while (retries > 0) {
+                    try {
+                        // 增加更充裕的延缓时间，等待系统蓝牙协议栈与设备GATT服务器状态刷新完毕
+                        await new Promise(resolve => setTimeout(resolve, 1500));
+                        await this.establishConnection(this.device);
+                        return; // 连接成功则退出函数
+                    } catch (e) {
+                        retries--;
+                        if (retries === 0) {
+                            console.error(`重新连接最终失败:`, e);
+                            this.log_e(`重新连接失败: ${e}`);
+                            this.isManualDisconnect = true;
+                            this.updateStatus('disconnected', this.device.name);
+                        } else {
+                            console.warn(`第 ${3 - retries} 次重连异常，后台准备下次重试:`, e);
+                            // 不在前端 UI 输出黄字，保持界面整洁，底层默默重试即可
+                        }
+                    }
+                }
+            }
+        }
+
         async connect() {
             try {
                 this.isManualDisconnect = false; // 重置手动断开标志
@@ -859,7 +896,7 @@
                     break;
                 } catch (error) {
                     console.log(`服务 ${serviceConfig.uuid} 连接失败:`, error);
-                    this.log_e(`服务 ${serviceConfig.uuid} 连接失败: ${error}`);
+                    // this.log_e(`服务 ${serviceConfig.uuid} 连接失败: ${error}`);
                     continue;
                 }
             }
@@ -900,7 +937,7 @@
 
             this.updateUI();
             this.updateStatus('disconnected', this.device ? this.device.name : '');
-            this.log_w(`"${this.device.name}" 已断开连接`);
+            this.log_e(`"${this.device.name}" 已断开连接`);
 
             // 自动重连：只有在开启了自动重连，且不是手动断开的情况下才触发
             if (this.autoReconnectEnabled && !this.isManualDisconnect) {
@@ -917,7 +954,7 @@
                 this.reconnectTimer = null;
                 if (this.autoReconnectEnabled && !this.isConnected && !this.isManualDisconnect && this.device) {
                     this.updateStatus('reconnecting', this.device.name);
-                    this.log_i(`"${this.device.name}" 正在重连...`);
+                    this.log_w(`"${this.device.name}" 正在重连...`);
                     try {
                         await this.establishConnection(this.device);
                     } catch (e) {
@@ -1381,11 +1418,11 @@
                 await this.dfuManager.startDFU(this.firmwareData);
             } catch (e) {
                 this.logDFU(`[DFU] ❌ 升级失败: ${e.message}`);
-                this.logDFU(`[DFU] 错误堆栈: ${e.stack || 'N/A'}`);
-                this.elements.dfuStatus.textContent = '升级失败';
-                this.elements.dfuStatus.className = 'dfu-status error';
-                this.elements.dfuStartBtn.style.display = ''; // re-enable start button on error
-                this.elements.dfuStopBtn.style.display = 'none';
+                // this.logDFU(`[DFU] 错误堆栈: ${e.stack || 'N/A'}`);
+                // this.elements.dfuStatus.textContent = '升级失败';
+                // this.elements.dfuStatus.className = 'dfu-status error';
+                // this.elements.dfuStartBtn.style.display = ''; // re-enable start button on error
+                // this.elements.dfuStopBtn.style.display = 'none';
             }
 
             // Note: startDFU logic handles successful completion internally, usually re-enabling buttons? 
@@ -1984,10 +2021,10 @@
                 statusEl.className = 'dfu-status success';
 
             } catch (e) {
-                this.debugger.logDFU(`[DFU] ❌ DFU失败: ${e.message}`);
-                this.debugger.logDFU(`[DFU] 错误堆栈: ${e.stack || 'N/A'}`);
-                statusEl.textContent = '升级失败';
-                statusEl.className = 'dfu-status error';
+                // this.debugger.logDFU(`[DFU] ❌ DFU失败: ${e.message}`);
+                // this.debugger.logDFU(`[DFU] 错误堆栈: ${e.stack || 'N/A'}`);
+                // statusEl.textContent = '升级失败';
+                // statusEl.className = 'dfu-status error';
                 throw e;
             } finally {
                 this.running = false;
