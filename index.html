@@ -254,19 +254,40 @@
             cursor: not-allowed;
         }
 
-        /* 自定义按键区域 */
-        .custom-buttons-panel {
+        .shortcut-btn-toggle {
+            padding: 5px 8px;
+            background-color: #3c3c3c;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background-color 0.3s;
+            align-self: stretch;
+        }
+
+        .shortcut-btn-toggle:hover {
+            background-color: #505050;
+        }
+
+        .shortcut-btn-toggle.active {
+            background-color: #0e639c;
+            color: white;
+        }
+
+        /* 快捷命令按键区域 */
+        .shortcut-buttons-panel {
             background-color: #2d2d30;
             /* padding: 5px; */
             border-radius: 5px;
             margin-top: 5px;
-            display: flex;
+            display: none;
             gap: 5px;
             flex-wrap: wrap;
             align-items: center;
         }
 
-        .custom-btn {
+        .shortcut-btn {
             padding: 6px 12px;
             background-color: #4a4a4a;
             color: white;
@@ -278,11 +299,11 @@
             white-space: nowrap;
         }
 
-        .custom-btn:hover:not(:disabled) {
+        .shortcut-btn:hover:not(:disabled) {
             background-color: #5a5a5a;
         }
 
-        .custom-btn:disabled {
+        .shortcut-btn:disabled {
             background-color: #3c3c3c;
             cursor: not-allowed;
             opacity: 0.6;
@@ -413,7 +434,7 @@
         .dfu-panel {
             background-color: #2d2d30;
             border-radius: 5px;
-            /* margin-bottom: 5px; */
+            border-bottom: 5px solid #1e1e1e;
             /* padding: 8px; */
             display: flex;
             flex-direction: column;
@@ -563,7 +584,11 @@
             <div class="receive-header">
                 <span id="receivedBytes">接收: 0</span>
                 <div class="receive-controls">
-                    <div class="checkbox-container" style="margin-left: 10px;">
+                    <div class="checkbox-container">
+                        <input type="checkbox" id="remoteToggle">
+                        <label id="remoteToggleLabel" for="remoteToggle">远程</label>
+                    </div>
+                    <div class="checkbox-container">
                         <input type="checkbox" id="dfuToggle">
                         <label for="dfuToggle">DFU</label>
                     </div>
@@ -576,6 +601,18 @@
                         <label for="autoReconnect">自动重连</label>
                     </div>
                     <button id="clearBtn" class="clear-btn">清除</button>
+                </div>
+            </div>
+
+            <!-- 远程日志服务区域 -->
+            <div class="dfu-panel" id="remotePanel" style="display: none;">
+                <div class="dfu-row">
+                    <span id="serverLed"
+                        style="width: 12px; height: 12px; border-radius: 50%; background: #9aa4ad; border: 1px solid #7d8791; display: inline-block;"></span>
+                    <span id="serverStatusInfo" style="color: #d4d4d4; margin-left: 4px;">未连接远程服务</span>
+                    <div style="flex: 1;"></div>
+                    <button id="btnConnectServer" class="dfu-start-btn" disabled>连接远程日志</button>
+                    <button id="btnDisconnectServer" class="dfu-stop-btn" style="display:none">断开远程</button>
                 </div>
             </div>
 
@@ -597,7 +634,18 @@
                     </div>
                 </div>
             </div>
+
             <div id="receiveOutput" class="receive-output"></div>
+        </div>
+
+        <!-- 快捷命令按键区域 -->
+        <div class="shortcut-buttons-panel">
+            <button id="btnTracker" class="shortcut-btn" disabled>Tracker状态</button>
+            <button id="btnBattery" class="shortcut-btn" disabled>电量</button>
+            <button id="btnMotion" class="shortcut-btn" disabled>运动状态</button>
+            <button id="btnWifiZone" class="shortcut-btn" disabled>WiFi-Zone</button>
+            <button id="btnFence" class="shortcut-btn" disabled>围栏</button>
+            <button id="btnReboot" class="shortcut-btn" disabled>重启</button>
         </div>
 
         <!-- 发送区域 -->
@@ -612,29 +660,7 @@
                 <label for="sendNewline">发送换行</label>
             </div>
             <button id="sendBtn" class="send-btn" disabled>发送</button>
-        </div>
-
-        <!-- 自定义按键区域 -->
-        <div class="custom-buttons-panel">
-            <button id="btnTracker" class="custom-btn" disabled>Tracker状态</button>
-            <button id="btnBattery" class="custom-btn" disabled>电量</button>
-            <button id="btnMotion" class="custom-btn" disabled>运动状态</button>
-            <button id="btnWifiZone" class="custom-btn" disabled>WiFi-Zone</button>
-            <button id="btnFence" class="custom-btn" disabled>围栏</button>
-            <button id="btnReboot" class="custom-btn" disabled>重启</button>
-        </div>
-
-        <!-- 日志服务器连接区域 -->
-        <div class="connection-panel" style="margin-top: 5px;">
-            <div class="connection-left" style="flex: 1; align-items: center; justify-content: flex-start;">
-                <span id="serverLed" class="serverLed"
-                    style="width: 12px; height: 12px; border-radius: 50%; background: #9aa4ad; border: 1px solid #7d8791; margin-right: 8px; display: inline-block;"></span>
-                <span id="serverStatusInfo" style="font-size: 12px; color: #d4d4d4;">未连接远程服务</span>
-            </div>
-            <div class="connection-right">
-                <button id="btnConnectServer" class="connect-btn" disabled>连接远程日志</button>
-                <button id="btnDisconnectServer" class="disconnect-btn" style="display: none;">断开远程</button>
-            </div>
+            <button id="shortcutBtnToggle" class="shortcut-btn-toggle" title="显示/隐藏快捷命令">▲</button>
         </div>
     </div>
 
@@ -718,7 +744,9 @@
                 hexSend: document.getElementById('hexSend'),
                 sendNewline: document.getElementById('sendNewline'),
                 sendBtn: document.getElementById('sendBtn'),
-                // 自定义按键
+                shortcutBtnToggle: document.getElementById('shortcutBtnToggle'),
+                shortcutButtonsPanel: document.querySelector('.shortcut-buttons-panel'),
+                // 快捷命令按键
                 btnTracker: document.getElementById('btnTracker'),
                 btnBattery: document.getElementById('btnBattery'),
                 btnMotion: document.getElementById('btnMotion'),
@@ -738,6 +766,9 @@
                 dfuStatus: document.getElementById('dfuStatus'),
                 dfuPanel: document.getElementById('dfuPanel'),
                 // 服务连接组件
+                remoteToggle: document.getElementById('remoteToggle'),
+                remoteToggleLabel: document.getElementById('remoteToggleLabel'),
+                remotePanel: document.getElementById('remotePanel'),
                 btnConnectServer: document.getElementById('btnConnectServer'),
                 btnDisconnectServer: document.getElementById('btnDisconnectServer'),
                 serverLed: document.getElementById('serverLed'),
@@ -757,22 +788,35 @@
                 }
             });
 
+            // 快捷命令按键区切换
+            this.elements.shortcutBtnToggle.addEventListener('click', () => {
+                const panel = this.elements.shortcutButtonsPanel;
+                const isHidden = panel.style.display === 'none' || panel.style.display === '';
+                panel.style.display = isHidden ? 'flex' : 'none';
+                this.elements.shortcutBtnToggle.textContent = isHidden ? '▼' : '▲';
+                this.elements.shortcutBtnToggle.classList.toggle('active', isHidden);
+            });
+
             // DFU按键事件
             this.elements.dfuToggle.addEventListener('change', (e) => {
                 this.elements.dfuPanel.style.display = e.target.checked ? 'flex' : 'none';
+            });
+            // 远程日志服务toggle
+            this.elements.remoteToggle.addEventListener('change', (e) => {
+                this.elements.remotePanel.style.display = e.target.checked ? 'flex' : 'none';
             });
             this.elements.dfuFileBtn.addEventListener('click', () => this.elements.dfuFile.click());
             this.elements.dfuFile.addEventListener('change', (e) => this.handleDFUFileSelect(e));
             this.elements.dfuStartBtn.addEventListener('click', () => this.startDFU());
             this.elements.dfuStopBtn.addEventListener('click', () => this.stopDFU());
 
-            // 自定义按键事件
-            this.elements.btnTracker.addEventListener('click', () => this.sendCustomCommand('tracker'));
-            this.elements.btnBattery.addEventListener('click', () => this.sendCustomCommand('adc'));
-            this.elements.btnMotion.addEventListener('click', () => this.sendCustomCommand('gsensor snapshot'));
-            this.elements.btnWifiZone.addEventListener('click', () => this.sendCustomCommand('wifizone'));
-            this.elements.btnFence.addEventListener('click', () => this.sendCustomCommand('fence'));
-            this.elements.btnReboot.addEventListener('click', () => this.sendCustomCommand('reboot'));
+            // 快捷命令按键事件
+            this.elements.btnTracker.addEventListener('click', () => this.sendShortcutCommand('tracker'));
+            this.elements.btnBattery.addEventListener('click', () => this.sendShortcutCommand('adc'));
+            this.elements.btnMotion.addEventListener('click', () => this.sendShortcutCommand('gsensor snapshot'));
+            this.elements.btnWifiZone.addEventListener('click', () => this.sendShortcutCommand('wifizone'));
+            this.elements.btnFence.addEventListener('click', () => this.sendShortcutCommand('fence'));
+            this.elements.btnReboot.addEventListener('click', () => this.sendShortcutCommand('reboot'));
 
             this.elements.hexDisplay.addEventListener('change', () => this.refreshDisplay());
             this.elements.autoReconnect.addEventListener('change', (e) => {
@@ -788,7 +832,7 @@
             });
         }
 
-        sendCustomCommand(command) {
+        sendShortcutCommand(command) {
             if (!this.isConnected || !this.sendCharacteristic) {
                 console.warn('设备未连接，无法发送命令');
                 this.log_w('设备未连接，无法发送命令');
@@ -809,14 +853,14 @@
 
                 this.sendCharacteristic.writeValue(buffer)
                     .then(() => {
-                        console.log(`发送自定义命令成功: ${command}`);
+                        console.log(`发送快捷命令成功: ${command}`);
                     })
                     .catch(error => {
-                        console.error('发送自定义命令失败:', error);
+                        console.error('发送快捷命令失败:', error);
                         this.handleBluetoothError('发送失败', error);
                     });
             } catch (error) {
-                console.error('发送自定义命令错误:', error);
+                console.error('发送快捷命令错误:', error);
                 this.handleBluetoothError('发送错误', error);
             }
         }
@@ -954,6 +998,9 @@
             }
             device._onDisconnect = () => this.handleDisconnect();
             device.addEventListener('gattserverdisconnected', device._onDisconnect, { once: true });
+
+            // 蓝牙连上设备后自动连接远程日志服务
+            this.connectLogServer({ fromAuto: true, silent: true });
         }
 
         async disconnect() {
@@ -977,9 +1024,17 @@
             this.updateStatus('disconnected', this.device ? this.device.name : '');
             this.log_e(`"${this.device.name}" 已断开连接`);
 
-            // 如果已经连接到了日志服务器，不需要彻底断开，但应该检查设备离线
-            if (this.logWs) {
-                this.log_w('设备已断开，日志服务连接暂停');
+            if (this.isManualDisconnect) {
+                // 如果是手动断开蓝牙，则一并断开远程服务器，准备应对后续可能的不同设备连接
+                if (this.logWs) {
+                    this.log_w('用户手动断开设备，同步断开日志服务');
+                    this.disconnectLogServer({ userAction: true });
+                }
+            } else {
+                // 如果是异常断开，则保留连接/让服务器感知暂缓
+                if (this.logWs) {
+                    this.log_w('设备已断开，日志服务连接暂停');
+                }
             }
 
             // 自动重连：只有在开启了自动重连，且不是手动断开的情况下才触发
@@ -1330,7 +1385,7 @@
                 this.elements.sendBtn.disabled = true;
             }
 
-            // 更新自定义按键状态
+            // 更新快捷命令按键状态
             this.elements.btnTracker.disabled = !this.isConnected;
             this.elements.btnBattery.disabled = !this.isConnected;
             this.elements.btnMotion.disabled = !this.isConnected;
@@ -1475,15 +1530,18 @@
             const btnConnect = this.elements.btnConnectServer;
             const btnDisconnect = this.elements.btnDisconnectServer;
             const statusInfo = this.elements.serverStatusInfo;
+            const toggleLabel = this.elements.remoteToggleLabel;
 
             serverLed.style.background = '#9aa4ad';
             serverLed.style.borderColor = '#7d8791';
+            if (toggleLabel) toggleLabel.style.color = '';
 
             if (state === "idle") {
                 btnConnect.style.display = 'block';
                 btnDisconnect.style.display = 'none';
                 statusInfo.textContent = "未连接远程服务";
                 statusInfo.style.color = "#d4d4d4";
+                if (toggleLabel) toggleLabel.textContent = '远程';
                 return;
             }
             if (state === "connecting") {
@@ -1494,6 +1552,7 @@
                 btnDisconnect.style.display = 'none';
                 statusInfo.textContent = "远程服务连接中...";
                 statusInfo.style.color = "yellow";
+                if (toggleLabel) toggleLabel.style.color = 'yellow';
                 return;
             }
             serverLed.style.background = '#27a845';
@@ -1502,6 +1561,10 @@
             btnDisconnect.style.display = 'block';
             statusInfo.textContent = "已连接远程服务";
             statusInfo.style.color = "rgb(0, 255, 0)";
+            if (toggleLabel) {
+                toggleLabel.style.color = 'rgb(0, 255, 0)';
+                toggleLabel.textContent = '已连接';
+            }
         }
 
         disconnectLogServer(options = {}) {
@@ -1539,15 +1602,23 @@
                 return false;
             }
 
-            if (this.logWs && this.logWs.readyState === WebSocket.OPEN) return true;
-            if (this.logWs && this.logWs.readyState === WebSocket.CONNECTING) return true;
+            if (this.logWs && (this.logWs.readyState === WebSocket.OPEN || this.logWs.readyState === WebSocket.CONNECTING)) {
+                if (this.wsBoundDeviceId === deviceIdText) {
+                    // 已连接或正在连接当前设备，忽略
+                    return true;
+                } else {
+                    // 设备发生了改变，断开之前的连接
+                    this.log_w(`设备已变更为 ${deviceIdText}，正在断开旧服务连接...`);
+                    this.disconnectLogServer();
+                }
+            }
 
             const url = `wss://ws-server.wszgdhz.com/ws/log?token=CHANGE_ME_TOKEN&device_id=${deviceIdText}`;
 
             this.disconnectLogServer();
             this.wsBoundDeviceId = deviceIdText;
             this.setServerUiState("connecting");
-            if (!silent) this.log_i(`正在连接日志服务器：${url}`);
+            // if (!silent) this.log_i(`正在连接日志服务器：${url}`);
 
             let ws = null;
             try {
