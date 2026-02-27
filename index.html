@@ -623,6 +623,19 @@
             <button id="btnFence" class="custom-btn" disabled>围栏</button>
             <button id="btnReboot" class="custom-btn" disabled>重启</button>
         </div>
+
+        <!-- 日志服务器连接区域 -->
+        <div class="connection-panel" style="margin-top: 5px;">
+            <div class="connection-left" style="flex: 1; align-items: center; justify-content: flex-start;">
+                <span id="serverLed" class="serverLed"
+                    style="width: 12px; height: 12px; border-radius: 50%; background: #9aa4ad; border: 1px solid #7d8791; margin-right: 8px; display: inline-block;"></span>
+                <span id="serverStatusInfo" style="font-size: 12px; color: #d4d4d4;">未连接远程服务</span>
+            </div>
+            <div class="connection-right">
+                <button id="btnConnectServer" class="connect-btn" disabled>连接远程日志</button>
+                <button id="btnDisconnectServer" class="disconnect-btn" style="display: none;">断开远程</button>
+            </div>
+        </div>
     </div>
 
     <!-- <script src="bluetooth.js"></script> -->
@@ -671,6 +684,18 @@
             this.dfuManager = null;
             this.firmwareData = null;
 
+            // 日志服务器相关
+            this.logWs = null;
+            this.wsConnectTimer = null;
+            this.wsReconnectTimer = null;
+            this.wsReconnectAttempt = 0;
+            this.wsUserDisabled = true;
+            this.wsBoundDeviceId = "";
+            this.MAX_PENDING_LOGS = 2000;
+            this.pendingLogPayloads = [];
+            this.pendingLogDeviceId = "";
+            this.pendingLogDropped = 0;
+
             this.initElements();
             this.bindEvents();
         }
@@ -712,6 +737,11 @@
                 dfuProgressText: document.getElementById('dfuProgressText'),
                 dfuStatus: document.getElementById('dfuStatus'),
                 dfuPanel: document.getElementById('dfuPanel'),
+                // 服务连接组件
+                btnConnectServer: document.getElementById('btnConnectServer'),
+                btnDisconnectServer: document.getElementById('btnDisconnectServer'),
+                serverLed: document.getElementById('serverLed'),
+                serverStatusInfo: document.getElementById('serverStatusInfo'),
             };
         }
 
@@ -747,6 +777,14 @@
             this.elements.hexDisplay.addEventListener('change', () => this.refreshDisplay());
             this.elements.autoReconnect.addEventListener('change', (e) => {
                 this.autoReconnectEnabled = e.target.checked;
+            });
+
+            // 日志服务按键事件
+            this.elements.btnConnectServer.addEventListener('click', () => {
+                this.connectLogServer({ userAction: true });
+            });
+            this.elements.btnDisconnectServer.addEventListener('click', () => {
+                this.disconnectLogServer({ userAction: true });
             });
         }
 
@@ -882,11 +920,11 @@
                     connectedService = serviceConfig;
 
                     // 获取特征值
-                    this.receiveCharacteristic = await service.getCharacteristic(serviceConfig.receiveCharUuid);
                     this.sendCharacteristic = await service.getCharacteristic(serviceConfig.sendCharUuid);
+                    this.receiveCharacteristic = await service.getCharacteristic(serviceConfig.receiveCharUuid);
                     this.log_i(`   服务ID: ${serviceConfig.uuid} 连接成功`);
-                    this.log_i(`RX 特征ID: ${serviceConfig.receiveCharUuid} 获取成功`);
-                    this.log_i(`TX 特征ID: ${serviceConfig.sendCharUuid} 获取成功`);
+                    this.log_i(`TX 特征ID: ${this.sendCharacteristic.uuid} 获取成功`);
+                    this.log_i(`RX 特征ID: ${this.receiveCharacteristic.uuid} 获取成功`);
 
                     // 启用通知
                     await this.receiveCharacteristic.startNotifications();
@@ -939,6 +977,11 @@
             this.updateStatus('disconnected', this.device ? this.device.name : '');
             this.log_e(`"${this.device.name}" 已断开连接`);
 
+            // 如果已经连接到了日志服务器，不需要彻底断开，但应该检查设备离线
+            if (this.logWs) {
+                this.log_w('设备已断开，日志服务连接暂停');
+            }
+
             // 自动重连：只有在开启了自动重连，且不是手动断开的情况下才触发
             if (this.autoReconnectEnabled && !this.isManualDisconnect) {
                 this.scheduleReconnect();
@@ -987,6 +1030,17 @@
             // 添加到缓冲区
             this.pendingContent += content;
             this.scheduleUpdate();
+
+            // 转发给远程日志服务器
+            if (!this.elements.hexDisplay.checked) {
+                try {
+                    const text = new TextDecoder('utf-8').decode(bytes);
+                    this.forwardLogToServer(text);
+                } catch (e) { }
+            } else {
+                const hexString = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join(' ');
+                this.forwardLogToServer(hexString);
+            }
         }
 
         scheduleUpdate() {
@@ -1128,11 +1182,13 @@
             }
 
             const timestamp = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+            const plainMessage = `[${timestamp}] [${levelChar}] ${message}`;
             // 构建带颜色标签的HTML片段
-            const formattedContent = `<span class="${colorClass}">[${timestamp}] [${levelChar}] ${message}</span>\n`;
+            const formattedContent = `<span class="${colorClass}">${plainMessage}</span>\n`;
 
             this.pendingContent += formattedContent;
             this.scheduleUpdate();
+            this.forwardLogToServer(plainMessage);
         }
 
         log_i(message) {
@@ -1287,6 +1343,267 @@
             // 由于改为按需加载SMP服务，此处不再检查this.smpCharacteristic
             const dfuReady = this.isConnected && this.firmwareData;
             this.elements.dfuStartBtn.disabled = !dfuReady;
+
+            // 更新日志服务器连接按钮状态
+            if (this.isConnected) {
+                this.elements.btnConnectServer.disabled = false;
+            } else {
+                this.elements.btnConnectServer.disabled = true;
+            }
+        }
+
+        // === 远程日志服务相关方法 ===
+        getActiveDeviceId() {
+            return this.device ? (this.device.name || this.device.id || "unknown_device") : "";
+        }
+
+        buildLogPayload(content) {
+            const cleaned = String(content || "")
+                .replace(/\x1b\[[0-9;]*m/g, "")
+                .replace(/\r\n/g, "\n")
+                .replace(/\r/g, "\n")
+                .replace(/\n{2,}/g, "\n")
+                .replace(/\n+$/g, "");
+            if (!cleaned) return null;
+            return {
+                ts: Math.floor(Date.now() / 1000),
+                msg: cleaned
+            };
+        }
+
+        canSendPayloadNow(deviceId) {
+            if (!deviceId) return false;
+            if (!this.logWs || this.logWs.readyState !== WebSocket.OPEN) return false;
+            return this.wsBoundDeviceId === deviceId;
+        }
+
+        sendPayloadNow(payload, deviceId) {
+            if (!this.canSendPayloadNow(deviceId)) return false;
+            try {
+                this.logWs.send(JSON.stringify(payload));
+                return true;
+            } catch (_) {
+                return false;
+            }
+        }
+
+        resetPendingLogBuffer() {
+            this.pendingLogPayloads = [];
+            this.pendingLogDeviceId = "";
+            this.pendingLogDropped = 0;
+        }
+
+        enqueuePendingPayload(payload, deviceId) {
+            if (!deviceId || !payload) return;
+            if (this.pendingLogDeviceId && this.pendingLogDeviceId !== deviceId) {
+                this.resetPendingLogBuffer();
+            }
+            this.pendingLogDeviceId = deviceId;
+            if (this.pendingLogPayloads.length >= this.MAX_PENDING_LOGS) {
+                this.pendingLogPayloads.shift();
+                this.pendingLogDropped += 1;
+            }
+            this.pendingLogPayloads.push(payload);
+        }
+
+        flushPendingPayloads(deviceId) {
+            if (!deviceId) return { sent: 0, dropped: 0, remaining: this.pendingLogPayloads.length };
+            if (this.pendingLogDeviceId && this.pendingLogDeviceId !== deviceId) {
+                this.resetPendingLogBuffer();
+                return { sent: 0, dropped: 0, remaining: 0 };
+            }
+
+            let sent = 0;
+            while (this.pendingLogPayloads.length > 0) {
+                const payload = this.pendingLogPayloads[0];
+                if (!this.sendPayloadNow(payload, deviceId)) break;
+                this.pendingLogPayloads.shift();
+                sent += 1;
+            }
+
+            const dropped = this.pendingLogDropped;
+            this.pendingLogDropped = 0;
+            if (this.pendingLogPayloads.length === 0) this.pendingLogDeviceId = "";
+            return { sent, dropped, remaining: this.pendingLogPayloads.length };
+        }
+
+        forwardLogToServer(content) {
+            if (this.wsUserDisabled) return;
+            const payload = this.buildLogPayload(content);
+            if (!payload) return;
+            const deviceId = this.getActiveDeviceId();
+            if (!deviceId) return;
+            if (this.sendPayloadNow(payload, deviceId)) return;
+            this.enqueuePendingPayload(payload, deviceId);
+        }
+
+        clearWsReconnectTimer() {
+            if (this.wsReconnectTimer !== null) {
+                window.clearTimeout(this.wsReconnectTimer);
+                this.wsReconnectTimer = null;
+            }
+        }
+
+        clearWsConnectTimer() {
+            if (this.wsConnectTimer !== null) {
+                window.clearTimeout(this.wsConnectTimer);
+                this.wsConnectTimer = null;
+            }
+        }
+
+        canConnectLogServer() {
+            if (this.wsUserDisabled) return false;
+            return this.isConnected && !!this.getActiveDeviceId();
+        }
+
+        scheduleWsReconnect(reason) {
+            if (!this.canConnectLogServer()) return;
+            if (this.logWs && (this.logWs.readyState === WebSocket.OPEN || this.logWs.readyState === WebSocket.CONNECTING)) return;
+            if (this.wsReconnectTimer !== null) return;
+
+            const delay = Math.min(1000 * (2 ** this.wsReconnectAttempt), 15000);
+            this.wsReconnectAttempt = Math.min(this.wsReconnectAttempt + 1, 6);
+            this.wsReconnectTimer = window.setTimeout(() => {
+                this.wsReconnectTimer = null;
+                this.connectLogServer({ fromAuto: true, silent: true });
+            }, delay);
+            this.log_e(`日志服务器断开，${Math.floor(delay / 1000)} 秒后自动重连（${reason}）`);
+        }
+
+        setServerUiState(state) {
+            const serverLed = this.elements.serverLed;
+            const btnConnect = this.elements.btnConnectServer;
+            const btnDisconnect = this.elements.btnDisconnectServer;
+            const statusInfo = this.elements.serverStatusInfo;
+
+            serverLed.style.background = '#9aa4ad';
+            serverLed.style.borderColor = '#7d8791';
+
+            if (state === "idle") {
+                btnConnect.style.display = 'block';
+                btnDisconnect.style.display = 'none';
+                statusInfo.textContent = "未连接远程服务";
+                statusInfo.style.color = "#d4d4d4";
+                return;
+            }
+            if (state === "connecting") {
+                serverLed.style.background = '#d63f3f';
+                serverLed.style.borderColor = '#b82f2f';
+                btnConnect.style.display = 'block';
+                btnConnect.disabled = true;
+                btnDisconnect.style.display = 'none';
+                statusInfo.textContent = "远程服务连接中...";
+                statusInfo.style.color = "yellow";
+                return;
+            }
+            serverLed.style.background = '#27a845';
+            serverLed.style.borderColor = '#1f8a38';
+            btnConnect.style.display = 'none';
+            btnDisconnect.style.display = 'block';
+            statusInfo.textContent = "已连接远程服务";
+            statusInfo.style.color = "rgb(0, 255, 0)";
+        }
+
+        disconnectLogServer(options = {}) {
+            const { userAction = false } = options;
+            if (userAction) {
+                this.wsUserDisabled = true;
+                this.resetPendingLogBuffer();
+            }
+            this.clearWsConnectTimer();
+            this.clearWsReconnectTimer();
+            if (this.logWs) {
+                try { this.logWs.onopen = null; this.logWs.onclose = null; this.logWs.onerror = null; } catch (_) { }
+                try { this.logWs.close(); } catch (_) { }
+            }
+            this.logWs = null;
+            this.wsBoundDeviceId = "";
+            this.setServerUiState("idle");
+            if (this.isConnected) {
+                this.elements.btnConnectServer.disabled = false;
+            }
+        }
+
+        connectLogServer(options = {}) {
+            const { fromAuto = false, silent = false } = options;
+            this.wsUserDisabled = false;
+
+            if (!this.isConnected) {
+                if (!silent) this.log_e("连接服务器失败：请先连接 BLE 设备");
+                return false;
+            }
+
+            const deviceIdText = this.getActiveDeviceId();
+            if (!deviceIdText) {
+                if (!silent) this.log_e("连接服务器失败：无法获取当前设备ID");
+                return false;
+            }
+
+            if (this.logWs && this.logWs.readyState === WebSocket.OPEN) return true;
+            if (this.logWs && this.logWs.readyState === WebSocket.CONNECTING) return true;
+
+            const url = `wss://ws-server.wszgdhz.com/ws/log?token=CHANGE_ME_TOKEN&device_id=${deviceIdText}`;
+
+            this.disconnectLogServer();
+            this.wsBoundDeviceId = deviceIdText;
+            this.setServerUiState("connecting");
+            if (!silent) this.log_i(`正在连接日志服务器：${url}`);
+
+            let ws = null;
+            try {
+                ws = new WebSocket(url);
+            } catch (e) {
+                this.wsBoundDeviceId = "";
+                this.log_e(`WebSocket 创建失败：${e?.message || e}`);
+                this.setServerUiState("idle");
+                if (fromAuto) this.scheduleWsReconnect("create-failed");
+                return false;
+            }
+
+            this.logWs = ws;
+            this.clearWsConnectTimer();
+            this.wsConnectTimer = window.setTimeout(() => {
+                if (this.logWs !== ws) return;
+                this.log_e("请求远程服务连接超时");
+                this.disconnectLogServer();
+                this.scheduleWsReconnect("timeout");
+            }, 10000);
+
+            ws.onopen = () => {
+                if (this.logWs !== ws) return;
+                this.clearWsConnectTimer();
+                this.clearWsReconnectTimer();
+                this.wsReconnectAttempt = 0;
+                this.setServerUiState("connected");
+                this.wsBoundDeviceId = deviceIdText;
+                const replay = this.flushPendingPayloads(deviceIdText);
+                let connectMsg = "远程日志服务器已连接";
+                if (replay.sent > 0 || replay.dropped > 0) {
+                    connectMsg += `，补发 ${replay.sent} 条缓存日志`;
+                    if (replay.dropped > 0) {
+                        connectMsg += `，丢弃 ${replay.dropped} 条（超过缓存上限 ${this.MAX_PENDING_LOGS}）`;
+                    }
+                }
+                this.log_i(connectMsg);
+            };
+
+            ws.onerror = () => {
+                if (this.logWs !== ws) return;
+                this.log_e("远程日志服务器连接失败");
+                this.disconnectLogServer();
+                this.scheduleWsReconnect("onerror");
+            };
+
+            ws.onclose = () => {
+                if (this.logWs !== ws) return;
+                this.clearWsConnectTimer();
+                this.logWs = null;
+                this.wsBoundDeviceId = "";
+                this.setServerUiState("idle");
+                this.log_w("远程日志服务器已断开");
+                this.scheduleWsReconnect("closed");
+            };
+            return true;
         }
 
         // === DFU 相关方法 ===
