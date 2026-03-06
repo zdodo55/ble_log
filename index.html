@@ -255,7 +255,7 @@
         }
 
         .shortcut-btn-toggle {
-            padding: 5px 8px;
+            padding: 5px 8px !important;
             background-color: #3c3c3c;
             color: white;
             border: none;
@@ -566,14 +566,18 @@
         <!-- 连接区域 -->
         <div class="connection-panel">
             <div class="connection-left">
-                <label>过滤:</label>
-                <input type="text" id="deviceNameFilter" placeholder="蓝牙名称过滤" value="Pet_">
+                <button id="filterToggleBtn" class="shortcut-btn-toggle">过滤</button>
+                <input type="text" id="deviceNameFilter" placeholder="蓝牙名称过滤" value="Pet_" style="display: none;">
                 <div class="status-info" title="点击重新连接">
                     <span id="connectionStatus">未连接</span>
                     <span id="connectedDevice"></span>
                 </div>
             </div>
             <div class="connection-right">
+                <div class="checkbox-container">
+                    <input type="checkbox" id="autoReconnect" checked>
+                    <label for="autoReconnect">自动重连</label>
+                </div>
                 <button id="connectBtn" class="connect-btn">连接</button>
                 <button id="disconnectBtn" class="disconnect-btn" style="display: none;">断开</button>
             </div>
@@ -589,10 +593,6 @@
                     <div class="checkbox-container">
                         <input type="checkbox" id="hexDisplay">
                         <label for="hexDisplay">HEX</label>
-                    </div>
-                    <div class="checkbox-container">
-                        <input type="checkbox" id="autoReconnect" checked>
-                        <label for="autoReconnect">自动重连</label>
                     </div>
                     <button id="clearBtn" class="clear-btn">清除</button>
                 </div>
@@ -729,6 +729,7 @@
 
         initElements() {
             this.elements = {
+                filterToggleBtn: document.getElementById('filterToggleBtn'),
                 deviceNameFilter: document.getElementById('deviceNameFilter'),
                 connectionStatus: document.getElementById('connectionStatus'),
                 connectedDevice: document.getElementById('connectedDevice'),
@@ -779,6 +780,13 @@
         }
 
         bindEvents() {
+            this.elements.filterToggleBtn.addEventListener('click', () => {
+                const input = this.elements.deviceNameFilter;
+                const isHidden = input.style.display === 'none';
+                input.style.display = isHidden ? 'inline-block' : 'none';
+                this.elements.filterToggleBtn.classList.toggle('active', isHidden);
+            });
+
             this.elements.connectBtn.addEventListener('click', () => this.connect());
             this.elements.disconnectBtn.addEventListener('click', () => this.disconnect());
             this.elements.statusInfo.addEventListener('click', () => this.reconnectPreviousDevice());
