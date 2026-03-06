@@ -584,14 +584,8 @@
             <div class="receive-header">
                 <span id="receivedBytes">接收: 0</span>
                 <div class="receive-controls">
-                    <div class="checkbox-container">
-                        <input type="checkbox" id="remoteToggle">
-                        <label id="remoteToggleLabel" for="remoteToggle">远程</label>
-                    </div>
-                    <div class="checkbox-container">
-                        <input type="checkbox" id="dfuToggle">
-                        <label for="dfuToggle">DFU</label>
-                    </div>
+                    <button id="remoteToggleBtn" class="shortcut-btn-toggle">远程</button>
+                    <button id="dfuToggleBtn" class="shortcut-btn-toggle">DFU</button>
                     <div class="checkbox-container">
                         <input type="checkbox" id="hexDisplay">
                         <label for="hexDisplay">HEX</label>
@@ -651,7 +645,7 @@
         <!-- 发送区域 -->
         <div class="send-panel">
             <input type="text" id="sendInput" class="send-input" placeholder="输入要发送的数据...">
-            <button id="shortcutBtnToggle" class="shortcut-btn-toggle" title="显示/隐藏快捷命令">▲</button>
+            <button id="shortcutBtnToggle" class="shortcut-btn-toggle">快捷命令</button>
             <div class="checkbox-container">
                 <input type="checkbox" id="hexSend">
                 <label for="hexSend">HEX</label>
@@ -732,7 +726,7 @@
                 connectionStatus: document.getElementById('connectionStatus'),
                 connectedDevice: document.getElementById('connectedDevice'),
                 statusInfo: document.querySelector('.status-info'),
-                dfuToggle: document.getElementById('dfuToggle'),
+                dfuToggleBtn: document.getElementById('dfuToggleBtn'),
                 autoReconnect: document.getElementById('autoReconnect'),
                 connectBtn: document.getElementById('connectBtn'),
                 disconnectBtn: document.getElementById('disconnectBtn'),
@@ -766,8 +760,8 @@
                 dfuStatus: document.getElementById('dfuStatus'),
                 dfuPanel: document.getElementById('dfuPanel'),
                 // 服务连接组件
-                remoteToggle: document.getElementById('remoteToggle'),
-                remoteToggleLabel: document.getElementById('remoteToggleLabel'),
+                remoteToggleBtn: document.getElementById('remoteToggleBtn'),
+                remoteToggleLabel: document.getElementById('remoteToggleBtn'),
                 remotePanel: document.getElementById('remotePanel'),
                 btnConnectServer: document.getElementById('btnConnectServer'),
                 btnDisconnectServer: document.getElementById('btnDisconnectServer'),
@@ -793,17 +787,21 @@
                 const panel = this.elements.shortcutButtonsPanel;
                 const isHidden = panel.style.display === 'none' || panel.style.display === '';
                 panel.style.display = isHidden ? 'flex' : 'none';
-                this.elements.shortcutBtnToggle.textContent = isHidden ? '▼' : '▲';
+                // this.elements.shortcutBtnToggle.textContent = isHidden ? '▼' : '▲';
                 this.elements.shortcutBtnToggle.classList.toggle('active', isHidden);
             });
 
             // DFU按键事件
-            this.elements.dfuToggle.addEventListener('change', (e) => {
-                this.elements.dfuPanel.style.display = e.target.checked ? 'flex' : 'none';
+            this.elements.dfuToggleBtn.addEventListener('click', () => {
+                const isHidden = this.elements.dfuPanel.style.display === 'none' || this.elements.dfuPanel.style.display === '';
+                this.elements.dfuPanel.style.display = isHidden ? 'flex' : 'none';
+                this.elements.dfuToggleBtn.classList.toggle('active', isHidden);
             });
             // 远程日志服务toggle
-            this.elements.remoteToggle.addEventListener('change', (e) => {
-                this.elements.remotePanel.style.display = e.target.checked ? 'flex' : 'none';
+            this.elements.remoteToggleBtn.addEventListener('click', () => {
+                const isHidden = this.elements.remotePanel.style.display === 'none' || this.elements.remotePanel.style.display === '';
+                this.elements.remotePanel.style.display = isHidden ? 'flex' : 'none';
+                this.elements.remoteToggleBtn.classList.toggle('active', isHidden);
             });
             this.elements.dfuFileBtn.addEventListener('click', () => this.elements.dfuFile.click());
             this.elements.dfuFile.addEventListener('change', (e) => this.handleDFUFileSelect(e));
@@ -1563,7 +1561,7 @@
             statusInfo.style.color = "rgb(0, 255, 0)";
             if (toggleLabel) {
                 toggleLabel.style.color = 'rgb(0, 255, 0)';
-                toggleLabel.textContent = '已连接';
+                toggleLabel.textContent = '远程已连接';
             }
         }
 
