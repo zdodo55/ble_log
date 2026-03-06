@@ -689,7 +689,6 @@
 
             // 保活机制相关
             this.wakeLock = null;
-            this.audioElement = null;
 
             // 服务UUID配置
             this.services = [
@@ -1470,47 +1469,12 @@
             }
         }
 
-        startSilentAudio() {
-            try {
-                if (!this.audioElement) {
-                    this.audioElement = new Audio();
-                    // 极短的空白静音 WAV 数据
-                    this.audioElement.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
-                    this.audioElement.loop = true;
-                    // 设置一个极小的音量，不能是0，否则部分系统会直接忽略
-                    this.audioElement.volume = 0.01;
-                }
-
-                // 必须在用户交互的上下文中调用 play()
-                const playPromise = this.audioElement.play();
-                if (playPromise !== undefined) {
-                    playPromise.then(() => {
-                        console.log('后台静音保活开始播放');
-                    }).catch(error => {
-                        console.warn('静音保活播放失败 (可能缺少用户交互):', error);
-                        // 很多浏览器需要用户点击后才能播放音频
-                    });
-                }
-            } catch (err) {
-                console.warn('启动后台音频保活失败:', err);
-            }
-        }
-
-        stopSilentAudio() {
-            if (this.audioElement) {
-                this.audioElement.pause();
-                this.audioElement.currentTime = 0;
-            }
-        }
-
         enableKeepAlive() {
             this.requestWakeLock();
-            this.startSilentAudio();
         }
 
         disableKeepAlive() {
             this.releaseWakeLock();
-            this.stopSilentAudio();
         }
 
         // === 远程日志服务相关方法 ===
