@@ -689,8 +689,7 @@
 
             // 保活机制相关
             this.wakeLock = null;
-            this.audioContext = null;
-            this.silenceNode = null;
+            this.audioElement = null;
 
             // 服务UUID配置
             this.services = [
@@ -1450,9 +1449,9 @@
                 try {
                     if (this.wakeLock !== null) return;
                     this.wakeLock = await navigator.wakeLock.request('screen');
-                    this.log_i('屏幕常亮锁已激活');
+                    // this.log_i('屏幕常亮锁已激活');
                     this.wakeLock.addEventListener('release', () => {
-                        this.log_i('屏幕常亮锁已释放');
+                        // this.log_i('屏幕常亮锁已释放');
                         this.wakeLock = null;
                     });
                 } catch (err) {
@@ -1473,20 +1472,24 @@
 
         startSilentAudio() {
             try {
-                if (!this.audioContext) {
-                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                if (!this.audioElement) {
+                    this.audioElement = new Audio();
+                    // 极短的空白静音 WAV 数据
+                    this.audioElement.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+                    this.audioElement.loop = true;
+                    // 设置一个极小的音量，不能是0，否则部分系统会直接忽略
+                    this.audioElement.volume = 0.01;
                 }
-                if (this.audioContext.state === 'suspended') {
-                    this.audioContext.resume();
-                }
-                if (!this.silenceNode) {
-                    const buffer = this.audioContext.createBuffer(1, 1, 22050);
-                    this.silenceNode = this.audioContext.createBufferSource();
-                    this.silenceNode.buffer = buffer;
-                    this.silenceNode.loop = true;
-                    this.silenceNode.connect(this.audioContext.destination);
-                    this.silenceNode.start();
-                    this.log_i('后台静音保活已启动');
+
+                // 必须在用户交互的上下文中调用 play()
+                const playPromise = this.audioElement.play();
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        console.log('后台静音保活开始播放');
+                    }).catch(error => {
+                        console.warn('静音保活播放失败 (可能缺少用户交互):', error);
+                        // 很多浏览器需要用户点击后才能播放音频
+                    });
                 }
             } catch (err) {
                 console.warn('启动后台音频保活失败:', err);
@@ -1494,16 +1497,9 @@
         }
 
         stopSilentAudio() {
-            if (this.silenceNode) {
-                try {
-                    this.silenceNode.stop();
-                    this.silenceNode.disconnect();
-                } catch (e) { }
-                this.silenceNode = null;
-                this.log_i('后台静音保活已停止');
-            }
-            if (this.audioContext && this.audioContext.state === 'running') {
-                this.audioContext.suspend();
+            if (this.audioElement) {
+                this.audioElement.pause();
+                this.audioElement.currentTime = 0;
             }
         }
 
