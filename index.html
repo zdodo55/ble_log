@@ -605,6 +605,10 @@
                         style="width: 12px; height: 12px; border-radius: 50%; background: #9aa4ad; border: 1px solid #7d8791; display: inline-block;"></span>
                     <span id="serverStatusInfo" style="color: #d4d4d4; margin-left: 4px;">未连接远程服务</span>
                     <div style="flex: 1;"></div>
+                    <div class="checkbox-container">
+                        <input type="checkbox" id="keepAlive" checked>
+                        <label for="keepAlive" title="保持屏幕常亮及后台运行">后台保活</label>
+                    </div>
                     <button id="btnConnectServer" class="dfu-start-btn" disabled>连接远程日志</button>
                     <button id="btnDisconnectServer" class="dfu-stop-btn" style="display:none">断开远程</button>
                 </div>
@@ -645,7 +649,7 @@
         <!-- 发送区域 -->
         <div class="send-panel">
             <input type="text" id="sendInput" class="send-input" placeholder="输入要发送的数据...">
-            <button id="shortcutBtnToggle" class="shortcut-btn-toggle">快捷命令</button>
+            <button id="shortcutBtnToggle" class="shortcut-btn-toggle">快捷</button>
             <div class="checkbox-container">
                 <input type="checkbox" id="hexSend">
                 <label for="hexSend">HEX</label>
@@ -682,6 +686,11 @@
             this.updateInterval = 100; // 更新间隔（毫秒）
             this.updateTimer = null; // 更新定时器
             this.pendingContent = ''; // 待显示内容
+
+            // 保活机制相关
+            this.wakeLock = null;
+            this.audioContext = null;
+            this.silenceNode = null;
 
             // 服务UUID配置
             this.services = [
@@ -728,6 +737,7 @@
                 statusInfo: document.querySelector('.status-info'),
                 dfuToggleBtn: document.getElementById('dfuToggleBtn'),
                 autoReconnect: document.getElementById('autoReconnect'),
+                keepAlive: document.getElementById('keepAlive'),
                 connectBtn: document.getElementById('connectBtn'),
                 disconnectBtn: document.getElementById('disconnectBtn'),
                 receiveOutput: document.getElementById('receiveOutput'),
@@ -819,6 +829,28 @@
             this.elements.hexDisplay.addEventListener('change', () => this.refreshDisplay());
             this.elements.autoReconnect.addEventListener('change', (e) => {
                 this.autoReconnectEnabled = e.target.checked;
+            });
+            this.elements.keepAlive.addEventListener('change', (e) => {
+                if (e.target.checked && this.isConnected) {
+                    this.enableKeepAlive();
+                } else if (!e.target.checked) {
+                    this.disableKeepAlive();
+                }
+            });
+
+            // 监听页面可见性变化实现无感重连
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    // 当页面从后台回到前台，如果是开启保活且在连接状态，重新请求WakeLock
+                    if (this.isConnected && this.elements.keepAlive.checked) {
+                        this.requestWakeLock();
+                    }
+                    // 如果意外断开，回到前台时马上尝试重连
+                    if (!this.isConnected && this.device && !this.isManualDisconnect && this.autoReconnectEnabled) {
+                        this.log_i('页面重新可见，自动尝试恢复连接...');
+                        this.reconnectPreviousDevice();
+                    }
+                }
             });
 
             // 日志服务按键事件
@@ -990,6 +1022,10 @@
             this.updateStatus('connected', device.name);
             this.log_i(`已连接 ${device.name}`);
 
+            if (this.elements.keepAlive.checked) {
+                this.enableKeepAlive();
+            }
+
             // 监听设备断开
             if (device._onDisconnect) {
                 device.removeEventListener('gattserverdisconnected', device._onDisconnect);
@@ -1021,6 +1057,8 @@
             this.updateUI();
             this.updateStatus('disconnected', this.device ? this.device.name : '');
             this.log_e(`"${this.device.name}" 已断开连接`);
+
+            this.disableKeepAlive();
 
             if (this.isManualDisconnect) {
                 // 如果是手动断开蓝牙，则一并断开远程服务器，准备应对后续可能的不同设备连接
@@ -1320,6 +1358,7 @@
             if (this.reconnectTimer) {
                 clearTimeout(this.reconnectTimer);
             }
+            this.disableKeepAlive();
         }
 
         refreshDisplay() {
@@ -1403,6 +1442,79 @@
             } else {
                 this.elements.btnConnectServer.disabled = true;
             }
+        }
+
+        // === 保活机制相关方法 ===
+        async requestWakeLock() {
+            if ('wakeLock' in navigator) {
+                try {
+                    if (this.wakeLock !== null) return;
+                    this.wakeLock = await navigator.wakeLock.request('screen');
+                    this.log_i('屏幕常亮锁已激活');
+                    this.wakeLock.addEventListener('release', () => {
+                        this.log_i('屏幕常亮锁已释放');
+                        this.wakeLock = null;
+                    });
+                } catch (err) {
+                    this.log_w(`屏幕唤醒锁请求失败，可能是系统权限或版本不支持: ${err.message}`);
+                }
+            } else {
+                console.log('当前浏览器不支持 WakeLock API');
+            }
+        }
+
+        releaseWakeLock() {
+            if (this.wakeLock !== null) {
+                this.wakeLock.release().then(() => {
+                    this.wakeLock = null;
+                });
+            }
+        }
+
+        startSilentAudio() {
+            try {
+                if (!this.audioContext) {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (this.audioContext.state === 'suspended') {
+                    this.audioContext.resume();
+                }
+                if (!this.silenceNode) {
+                    const buffer = this.audioContext.createBuffer(1, 1, 22050);
+                    this.silenceNode = this.audioContext.createBufferSource();
+                    this.silenceNode.buffer = buffer;
+                    this.silenceNode.loop = true;
+                    this.silenceNode.connect(this.audioContext.destination);
+                    this.silenceNode.start();
+                    this.log_i('后台静音保活已启动');
+                }
+            } catch (err) {
+                console.warn('启动后台音频保活失败:', err);
+            }
+        }
+
+        stopSilentAudio() {
+            if (this.silenceNode) {
+                try {
+                    this.silenceNode.stop();
+                    this.silenceNode.disconnect();
+                } catch (e) { }
+                this.silenceNode = null;
+                this.log_i('后台静音保活已停止');
+            }
+            if (this.audioContext && this.audioContext.state === 'running') {
+                this.audioContext.suspend();
+            }
+        }
+
+        enableKeepAlive() {
+            this.requestWakeLock();
+            this.startSilentAudio();
+        }
+
+        disableKeepAlive() {
+            this.releaseWakeLock();
+            this.stopSilentAudio();
         }
 
         // === 远程日志服务相关方法 ===
