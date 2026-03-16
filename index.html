@@ -984,7 +984,7 @@
                 // 请求蓝牙设备
                 const device = await navigator.bluetooth.requestDevice({
                     filters: [{
-                        namePrefix: this.elements.deviceNameFilter.value
+                        namePrefix: this.elements.deviceNameFilter.value || 'AB_'
                     }],
                     optionalServices: [...this.services.map(s => s.uuid), this.SMP_SERVICE_UUID]
                 });
