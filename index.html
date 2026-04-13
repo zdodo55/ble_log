@@ -623,6 +623,7 @@
                 <div class="dfu-row">
                     <input type="file" id="dfuFile" accept=".zip,.bin">
                     <button class="dfu-file-btn" id="dfuFileBtn">选择固件</button>
+                    <button class="dfu-file-btn" id="dfuReloadBtn" disabled>重载</button>
                     <span class="dfu-file-info" id="dfuFileInfo">未选择文件</span>
                     <div style="flex: 1;"></div>
                     <span class="dfu-status" id="dfuStatus"></span>
@@ -698,8 +699,8 @@
             this.services = [
                 {
                     uuid: '0000d0d0-0000-1000-8000-00805f9b34fb',
-                    sendCharUuid: '0000d0d1-0000-1000-8000-00805f9b34fb',
-                    receiveCharUuid: '0000d0d2-0000-1000-8000-00805f9b34fb'
+                    sendCharUuid: '0000d0d2-0000-1000-8000-00805f9b34fb',
+                    receiveCharUuid: '0000d0d1-0000-1000-8000-00805f9b34fb'
                 },
                 {
                     uuid: '6e400001-b5a3-f393-e0a9-e50e24dcca9e',
@@ -714,6 +715,7 @@
             this.smpCharacteristic = null;
             this.dfuManager = null;
             this.firmwareData = null;
+            this.lastDfuFileHandle = null; // File System Access API 的文件句柄，用于重载
 
             // 日志服务器相关
             this.logWs = null;
@@ -729,6 +731,7 @@
 
             this.initElements();
             this.bindEvents();
+            this.restoreDfuFileHandle();
         }
 
         initElements() {
@@ -764,6 +767,7 @@
                 // DFU元素
                 dfuFile: document.getElementById('dfuFile'),
                 dfuFileBtn: document.getElementById('dfuFileBtn'),
+                dfuReloadBtn: document.getElementById('dfuReloadBtn'),
                 dfuFileInfo: document.getElementById('dfuFileInfo'),
                 dfuStartBtn: document.getElementById('dfuStartBtn'),
                 dfuStopBtn: document.getElementById('dfuStopBtn'),
@@ -824,8 +828,9 @@
                 this.elements.remotePanel.style.display = isHidden ? 'flex' : 'none';
                 this.elements.remoteToggleBtn.classList.toggle('active', isHidden);
             });
-            this.elements.dfuFileBtn.addEventListener('click', () => this.elements.dfuFile.click());
+            this.elements.dfuFileBtn.addEventListener('click', () => this.selectDFUFile());
             this.elements.dfuFile.addEventListener('change', (e) => this.handleDFUFileSelect(e));
+            this.elements.dfuReloadBtn.addEventListener('click', () => this.reloadDFUFile());
             this.elements.dfuStartBtn.addEventListener('click', () => this.startDFU());
             this.elements.dfuStopBtn.addEventListener('click', () => this.stopDFU());
 
@@ -1012,9 +1017,9 @@
                     // 获取特征值
                     this.sendCharacteristic = await service.getCharacteristic(serviceConfig.sendCharUuid);
                     this.receiveCharacteristic = await service.getCharacteristic(serviceConfig.receiveCharUuid);
-                    this.log_i(`   服务ID: ${serviceConfig.uuid} 连接成功`);
-                    this.log_i(`TX 特征ID: ${this.sendCharacteristic.uuid} 获取成功`);
-                    this.log_i(`RX 特征ID: ${this.receiveCharacteristic.uuid} 获取成功`);
+                    this.log_i(`       服务ID: ${serviceConfig.uuid} 连接成功`);
+                    this.log_i(`Notify 特征ID: ${this.receiveCharacteristic.uuid} 获取成功`);
+                    this.log_i(`Write  特征ID: ${this.sendCharacteristic.uuid} 获取成功`);
 
                     // 启用通知
                     await this.receiveCharacteristic.startNotifications();
@@ -1106,12 +1111,12 @@
                 this.reconnectTimer = null;
                 if (this.autoReconnectEnabled && !this.isConnected && !this.isManualDisconnect && this.device) {
                     this.updateStatus('reconnecting', this.device.name);
-                    this.log_w(`"${this.device.name}" 正在重连...`);
+                    // this.log_w(`"${this.device.name}" 正在重连...`);
                     try {
                         await this.establishConnection(this.device);
                     } catch (e) {
                         console.log('重连失败，1秒后重试:', e);
-                        this.log_e(`重连失败，1秒后重试: ${e}`);
+                        // this.log_e(`重连失败，1秒后重试: ${e}`);
                         this.scheduleReconnect(1000);
                     }
                 }
@@ -1776,10 +1781,92 @@
             this.scheduleUpdate();
         }
 
+        // IndexedDB 存取文件句柄，刷新页面后恢复
+        saveDfuFileHandle(handle) {
+            try {
+                const req = indexedDB.open('ble_debug_tool', 1);
+                req.onupgradeneeded = (e) => e.target.result.createObjectStore('kv');
+                req.onsuccess = (e) => {
+                    const db = e.target.result;
+                    const tx = db.transaction('kv', 'readwrite');
+                    tx.objectStore('kv').put(handle, 'lastDfuFileHandle');
+                };
+            } catch (_) { }
+        }
+
+        async restoreDfuFileHandle() {
+            try {
+                const db = await new Promise((resolve, reject) => {
+                    const req = indexedDB.open('ble_debug_tool', 1);
+                    req.onupgradeneeded = (e) => e.target.result.createObjectStore('kv');
+                    req.onsuccess = (e) => resolve(e.target.result);
+                    req.onerror = () => reject();
+                });
+                const handle = await new Promise((resolve, reject) => {
+                    const tx = db.transaction('kv', 'readonly');
+                    const req = tx.objectStore('kv').get('lastDfuFileHandle');
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = () => reject();
+                });
+                if (handle) {
+                    this.lastDfuFileHandle = handle;
+                    this.elements.dfuReloadBtn.disabled = false;
+                }
+            } catch (_) { }
+        }
+
+        async selectDFUFile() {
+            // 优先使用 File System Access API，支持后续重载
+            if (window.showOpenFilePicker) {
+                try {
+                    const opts = {
+                        id: 'dfu-firmware',
+                        types: [{
+                            description: '固件文件',
+                            accept: { 'application/octet-stream': ['.zip', '.bin'] }
+                        }]
+                    };
+                    if (this.lastDfuFileHandle) {
+                        opts.startIn = this.lastDfuFileHandle;
+                    }
+                    const [handle] = await window.showOpenFilePicker(opts);
+                    this.lastDfuFileHandle = handle;
+                    this.saveDfuFileHandle(handle);
+                    const file = await handle.getFile();
+                    await this.loadDFUFile(file);
+                } catch (e) {
+                    if (e.name !== 'AbortError') {
+                        this.logDFU(`[DFU] 文件选择失败: ${e.message}`);
+                    }
+                }
+            } else {
+                // 回退：使用传统 input[type=file]
+                this.elements.dfuFile.click();
+            }
+        }
+
         async handleDFUFileSelect(event) {
             const file = event.target.files[0];
             if (!file) return;
+            this.lastDfuFileHandle = null; // 传统方式无法重载
+            await this.loadDFUFile(file);
+        }
 
+        async reloadDFUFile() {
+            if (!this.lastDfuFileHandle) {
+                this.logDFU('[DFU] 无可重载的文件，请先选择固件');
+                return;
+            }
+            try {
+                const file = await this.lastDfuFileHandle.getFile();
+                this.logDFU(`[DFU] 重载固件文件: ${file.name}`);
+                await this.loadDFUFile(file);
+            } catch (error) {
+                this.logDFU(`[DFU] 重载失败: ${error.message}`);
+            }
+        }
+
+        async loadDFUFile(file) {
             this.elements.dfuStatus.textContent = '';
             this.elements.dfuStatus.className = 'dfu-status';
 
@@ -1818,6 +1905,7 @@
                 this.firmwareData = firmwareBytes;
                 this.elements.dfuFileInfo.textContent = `${file.name}`;
                 this.elements.dfuFileInfo.title = file.name;
+                this.elements.dfuReloadBtn.disabled = !this.lastDfuFileHandle;
                 this.updateUI();
 
             } catch (error) {
