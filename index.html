@@ -566,6 +566,7 @@
         <!-- 连接区域 -->
         <div class="connection-panel">
             <div class="connection-left">
+                <button id="langToggleBtn" class="shortcut-btn-toggle" style="margin-right: 5px;">中/En</button>
                 <button id="filterToggleBtn" class="shortcut-btn-toggle">过滤</button>
                 <input type="text" id="deviceNameFilter" placeholder="蓝牙名称过滤" value="AB_" style="display: none;">
                 <div class="status-info" title="点击重新连接">
@@ -671,6 +672,234 @@
 </body>
 
 <script>
+    window.onerror = function (msg, src, ln, col, err) {
+        alert("JS Error: " + msg + "\nLine: " + ln + "\nCol: " + col);
+    };
+</script>
+<script>
+    window.currentLang = localStorage.getItem('bt_debugger_lang') || 'zh';
+    const i18nDict = {
+        "您的浏览器不支持Web Bluetooth API，请使用Chrome、Edge或Opera浏览器。": "Your browser doesn't support Web Bluetooth API, please use Chrome, Edge or Opera.",
+        "屏幕唤醒锁请求失败，可能是系统权限或版本不支持:": "Screen wake lock request failed, possibly due to system permission or version:",
+        "用户手动断开设备，同步断开日志服务": "User manually disconnected device, log service disconnected synchronously",
+        "[DFU] ✅ 目标固件已是当前运行版本 (Slot 0)，无需升级": "[DFU] ✅ Target firmware is running version (Slot 0), no need to upgrade",
+        "[DFU] ⚠ 检测到当前固件未确认(测试模式)，正在执行自动确认...": "[DFU] ⚠ Detected unconfirmed firmware (test mode), auto confirming...",
+        "蓝牙权限遭拒。请检查系统设置。": "Bluetooth permission denied. Please check system settings.",
+        "[DFU] === 步骤: Image List (OP = 0, Group = 1, ID = 0) ===": "[DFU] === Step: Image List (OP = 0, Group = 1, ID = 0) ===",
+        "次重连异常，后台准备下次重试:": "th reconnect exception, prepare next retry in background:",
+        "连接服务器失败：请先连接 BLE 设备": "Failed to connect server: Please connect BLE device first",
+        "找不到蓝牙硬件，或浏览器不支持。": "Bluetooth hardware not found or browser not supported.",
+        "连接服务器失败：无法获取当前设备ID": "Failed to connect server: Cannot get current device ID",
+        "[DFU] 无可重载的文件，请先选择固件": "[DFU] No reloadable file, please select firmware first",
+        "[DFU] ✅ 目标固件已存在于Slot 1，直接执行切换...": "[DFU] ✅ Target firmware exists in Slot 1, switching...",
+        "[DFU] ⚠ 未收到images信息，继续上传...": "[DFU] ⚠ No images info received, continue uploading...",
+        "[DFU] [3/5] 重新查询固件信息获取新hash...": "[DFU] [3/5] Re-querying firmware info for new hash...",
+        "[DFU] [4/5] 标记新固件为永久(Confirm)...": "[DFU] [4/5] Confirming new firmware as permanent...",
+        "设备已断开，日志服务连接暂停": "Device disconnected, log service connection paused",
+        "[DFU] ❌ 设备未连接，请先连接设备": "[DFU] ❌ Device not connected, please connect first",
+        "连接不稳定，无法建立连接。": "Connection unstable, cannot establish connection.",
+        "[SMP] SMP服务已找到，正在获取特征:": "[SMP] SMP service found, getting characteristic:",
+        "[DFU] ❌ SMP服务不可用，无法继续升级": "[DFU] ❌ SMP service unavailable, cannot upgrade",
+        "设备连接后自动连接远程日志": "Auto connect remote log after device connected",
+        "当前浏览器不支持 WakeLock API": "WakeLock API not supported in current browser",
+        "[DFU] ===       DFU升级流程开始           ===": "[DFU] ===       DFU Upgrade Started       ===",
+        "[DFU] [1/5] 查询当前设备固件信息...": "[DFU] [1/5] Querying device firmware info...",
+        "保持屏幕常亮及后台运行": "Keep screen awake and running in background",
+        "[DFU] ✅ DFU操作完成 (通过快速验证/切换)!": "[DFU] ✅ DFU done (via quick verify/switch)!",
+        "[DFU] ⚠ 未获取到hash，使用空hash": "[DFU] ⚠ No hash obtained, using empty hash",
+        "[DFU] 切换指令已发送，正在复位设备...": "[DFU] Switch cmd sent, resetting device...",
+        "设备未连接，无法发送命令": "Device not connected, cannot send command",
+        "[DFU] 所有前置检查通过，开始DFU流程...": "[DFU] Pre-checks passed, starting DFU...",
+        "[DFU] 🔎 发现固件文件包含设备Slot ": "[DFU] 🔎 Firmware contains hash for Slot ",
+        "[DFU] [5/5] 复位设备以应用新固件...": "[DFU] [5/5] Resetting device to apply...",
+        "[SMP] 正在按需查找SMP服务:": "[SMP] Looking up SMP service on demand:",
+        "[DFU] === 开始DFU按钮被点击 ===": "[DFU] === Start DFU button clicked ===",
+        "[SMP] ❌ 无法启用SMP服务:": "[SMP] ❌ Failed to enable SMP service:",
+        "[DFU] ❌ 重试失败，终止上传": "[DFU] ❌ Retry failed, abort uploading",
+        "[DFU] ❌ 设备返回错误: rc = ": "[DFU] ❌ Device returned error: rc = ",
+        "[DFU] ✅ DFU升级完成! 用时:": "[DFU] ✅ DFU upgrade completed! Time:",
+        "发送快捷命令成功:": "Shortcut command sent successfully:",
+        "重连失败，1秒后重试:": "Reconnect failed, wait 1s to retry:",
+        "远程日志服务器连接失败": "Remote log server connection failed",
+        "[DFU] ❌ DFU管理器未初始化": "[DFU] ❌ DFU manager not initialized",
+        "[DFU] ⚠ 未获取到slot 1的hash": "[DFU] ⚠ No hash for slot 1 received",
+        "[DFU] ✅ 当前固件已确认": "[DFU] ✅ Current firmware confirmed",
+        "请求远程服务连接超时": "Remote service connection timeout",
+        "[DFU] Image List 响应header:": "[DFU] Image List response header:",
+        "[DFU] [2/5] 上传固件...": "[DFU] [2/5] Uploading firmware...",
+        "检测到ANSI转义字符:": "ANSI escape characters detected:",
+        "[DFU] ✅ 固件上传完成! 用时:": "[DFU] ✅ Firmware uploaded! Time:",
+        "远程服务连接中...": "Connecting to remote service...",
+        "[DFU] 固件头32字节:": "[DFU] Firmware header 32 bytes:",
+        ")，尝试降低分块大小:": "), trying to reduce chunk size:",
+        "，正在断开旧服务连接...": ", disconnecting old service...",
+        "远程日志服务器已断开": "Remote log server disconnected",
+        "[SMP] SMP通知已启用": "[SMP] SMP notification enabled",
+        "[SMP] ❌ 响应超时 (15s)": "[SMP] ❌ Response timeout (15s)",
+        "发送快捷命令失败:": "Shortcut command send failed:",
+        "ZIP中未找到.bin固件文件": "No .bin firmware found in ZIP",
+        "[SMP] ✅ SMP DFU服务就绪": "[SMP] ✅ SMP DFU service ready",
+        "设备返回错误码:": "Device returned error string:",
+        ")，判定为相同版本": "), determined as same version",
+        "[DFU] 文件选择失败:": "[DFU] File selection failed:",
+        "上传块失败 @offset=": "Upload chunk failed @offset=",
+        "未连接远程服务": "Remote Service Disconnected",
+        "远程日志服务器已连接": "Remote log server connected",
+        "[DFU] 重载固件文件:": "[DFU] Reload firmware file:",
+        "WebSocket 创建失败：": "WebSocket creation failed:",
+        "[DFU] ❌ 未选择固件文件": "[DFU] ❌ No firmware chosen",
+        "重新连接最终失败:": "Reconnect finally failed:",
+        "日志服务器断开，": "Log server disconnected, ",
+        "已连接远程服务": "Remote service connected",
+        "[DFU] 设备复位中 (": "[DFU] Device resetting (",
+        ") - 连接中断为正常现象": ") - normal disconnection",
+        " 条（超过缓存上限 ": " logs (exceeding cache limit ",
+        "[DFU] 文件加载失败:": "[DFU] File load failed:",
+        "[DFU] ❌ 升级失败:": "[DFU] ❌ Upgrade failed:",
+        "正在尝试重新连接...": "Trying to reconnect...",
+        "[DFU] 已加载固件:": "[DFU] Firmware loaded:",
+        "[DFU] ⚠ 写入失败(": "[DFU] ⚠ Write failed (",
+        "[DFU] 用户停止了DFU": "[DFU] User stopped DFU",
+        "输入要发送的数据...": "Enter data to send...",
+        "秒后自动重连（": "s to auto reconnect (",
+        "点击重新连接": "Click to reconnect",
+        "[DFU] ⚠ 写入重试 (": "[DFU] ⚠ Write retry (",
+        "[DFU] Reset响应:": "[DFU] Reset response:",
+        "[DFU] 重载失败:": "[DFU] Reload failed:",
+        "未选择固件": "No Firmware Selected",
+        "[DFU] 固件大小:": "[DFU] Firmware size:",
+        "蓝牙串口调试工具": "BLE Serial Debugger",
+        "[DFU] 状态检查:": "[DFU] Status check:",
+        "DFU已被用户停止": "DFU stopped by user",
+        "连接远程日志": "Connect Remote Log",
+        "连接失败:": "Connection failed:",
+        "处理后内容:": "Processed content:",
+        "HEX格式错误": "Invalid HEX format",
+        "设备已变更为 ": "Device changed to ",
+        "断开远程": "Disconnect Remote",
+        "重新连接失败:": "Reconnect failed:",
+        "原始内容:": "Original content:",
+        "升级完成 (": "Update complete (",
+        "未选择文件": "No file selected",
+        "蓝牙错误:": "Bluetooth error:",
+        "远程已连接": "Remote Connected",
+        "[DFU] 正在解压:": "[DFU] Unzipping:",
+        "，完整响应:": ", full response:",
+        "蓝牙名称过滤": "BLE Name Filter",
+        "选择固件": "Select Firmware",
+        "正在重连...": "Reconnecting...",
+        "SMP不可用": "SMP Unavailable",
+        "自动重连": "Auto Reconnect",
+        "Tracker状态": "Tracker Status",
+        "连接中...": "Connecting...",
+        "固件文件": "Firmware File",
+        "DFU未就绪": "DFU Not Ready",
+        "未连接": "Disconnected",
+        "自动连接": "Auto Connect",
+        "运动状态": "Motion State",
+        "发送换行": "Send Newline",
+        "发送失败:": "Send failed:",
+        " 条缓存日志": " cached logs",
+        "s 平均速度:": "s Avg speed:",
+        "[DFU] 发现 ": "[DFU] Found ",
+        " 个image slot": " image slots",
+        "发送失败": "Send failed",
+        "扫描中...": "Scanning...",
+        "错误码:": "Error code:",
+        "升级中...": "Updating...",
+        "断开": "Disconnect",
+        "保持亮屏": "Keep Awake",
+        "发送错误": "Send error",
+        "，补发 ": ", replayed ",
+        "，丢弃 ": ", dropped ",
+        "文件错误": "File Error",
+        "开始DFU": "Start DFU",
+        "快捷": "Shortcuts",
+        "已连接": "Connected",
+        "已取消": "Cancelled",
+        "WiFi-Zone": "WiFi-Zone",
+        "连接": "Connect",
+        "电量": "Battery",
+        "已停止": "Stopped",
+        "远程": "Remote",
+        "重载": "Reload",
+        "重启": "Reboot",
+        "的Hash(": " Hash(",
+        "过滤": "Filter",
+        "接收: 0": "RX: 0",
+        "清除": "Clear",
+        "围栏": "Fence",
+        "错误": "错误",
+        "停止": "Stop",
+        "发送": "发送",
+        "完成": "Done",
+        "接收:": "RX:",
+        "）": ")"
+};
+
+    function t(zhStr) {
+        if (window.currentLang === 'en') {
+            return i18nDict[zhStr] || zhStr;
+        }
+        return zhStr;
+    }
+
+    function switchLanguage(lang) {
+        window.currentLang = lang;
+        localStorage.setItem('bt_debugger_lang', lang);
+
+        const walk = (node) => {
+            if (node.nodeType === Node.TEXT_NODE) {
+                let text = node.nodeValue.trim();
+                if (text) {
+                    let key = node.parentElement.dataset.i18n;
+                    if (!key) {
+                        if (i18nDict[text]) key = text;
+                        else {
+                            for (let k in i18nDict) {
+                                if (i18nDict[k] === text) { key = k; break; }
+                            }
+                        }
+                    }
+                    if (key) {
+                        node.parentElement.dataset.i18n = key;
+                        node.nodeValue = window.currentLang === 'en' ? (i18nDict[key] || key) : key;
+                    }
+                }
+            } else if (node.nodeType === Node.ELEMENT_NODE) {
+                if (node.placeholder) {
+                    let key = node.dataset.i18nPlaceholder;
+                    if (!key) {
+                        key = node.placeholder;
+                        node.dataset.i18nPlaceholder = key;
+                    }
+                    node.placeholder = window.currentLang === 'en' ? (i18nDict[key] || key) : key;
+                }
+                if (node.title) {
+                    let key = node.dataset.i18nTitle;
+                    if (!key) {
+                        key = node.title;
+                        node.dataset.i18nTitle = key;
+                    }
+                    node.title = window.currentLang === 'en' ? (i18nDict[key] || key) : key;
+                }
+                node.childNodes.forEach(child => walk(child));
+            }
+        };
+        walk(document.body);
+        walk(document.head.querySelector('title'));
+
+        if (window.appInstance) {
+            // Trigger UI update using new language
+            window.appInstance.updateUI();
+
+            // Force status resync to translate status texts
+            if (window.appInstance.elements && window.appInstance.elements.dfuStatus) {
+                // If there was an error status, it stays. This updates static labels.
+            }
+        }
+    }
+
     // 蓝牙串口调试工具主程序
     class BluetoothSerialDebugger {
         constructor() {
@@ -699,8 +928,8 @@
             this.services = [
                 {
                     uuid: '0000d0d0-0000-1000-8000-00805f9b34fb',
-                    sendCharUuid: '0000d0d2-0000-1000-8000-00805f9b34fb',
-                    receiveCharUuid: '0000d0d1-0000-1000-8000-00805f9b34fb'
+                    sendCharUuid: '0000d0d1-0000-1000-8000-00805f9b34fb',
+                    receiveCharUuid: '0000d0d2-0000-1000-8000-00805f9b34fb'
                 },
                 {
                     uuid: '6e400001-b5a3-f393-e0a9-e50e24dcca9e',
@@ -730,6 +959,23 @@
             this.pendingLogDropped = 0;
 
             this.initElements();
+            
+            // i18n handle: Monkey patch logMessage to translate on the fly
+            const originalLogMessage = this.logMessage.bind(this);
+            this.logMessage = function(message, type = 'info', isRemote = false) {
+                let outMsg = message ? message.toString() : '';
+                if (window.currentLang === 'en') {
+                    // Sort keys by length strictly descending to prevent partial match overwriting
+                    const keys = Object.keys(i18nDict).sort((a, b) => b.length - a.length);
+                    for (let k of keys) {
+                        if (outMsg.includes(k)) {
+                            outMsg = outMsg.replaceAll(k, i18nDict[k]);
+                        }
+                    }
+                }
+                originalLogMessage(outMsg, type, isRemote);
+            };
+
             this.bindEvents();
             this.restoreDfuFileHandle();
         }
@@ -789,6 +1035,11 @@
         }
 
         bindEvents() {
+            document.getElementById('langToggleBtn').addEventListener('click', () => {
+                const newLang = window.currentLang === 'en' ? 'zh' : 'en';
+                switchLanguage(newLang);
+            });
+
             this.elements.filterToggleBtn.addEventListener('click', () => {
                 const input = this.elements.deviceNameFilter;
                 const isHidden = input.style.display === 'none';
@@ -1017,9 +1268,9 @@
                     // 获取特征值
                     this.sendCharacteristic = await service.getCharacteristic(serviceConfig.sendCharUuid);
                     this.receiveCharacteristic = await service.getCharacteristic(serviceConfig.receiveCharUuid);
-                    this.log_i(`       服务ID: ${serviceConfig.uuid} 连接成功`);
-                    this.log_i(`Notify 特征ID: ${this.receiveCharacteristic.uuid} 获取成功`);
-                    this.log_i(`Write  特征ID: ${this.sendCharacteristic.uuid} 获取成功`);
+                    this.log_i(`Service: ${serviceConfig.uuid}`);
+                    this.log_i(`Notify : ${this.receiveCharacteristic.uuid}`);
+                    this.log_i(`Write  : ${this.sendCharacteristic.uuid}`);
 
                     // 启用通知
                     await this.receiveCharacteristic.startNotifications();
@@ -1128,7 +1379,7 @@
             const bytes = new Uint8Array(value.buffer);
 
             this.receivedBytes += bytes.length;
-            this.elements.receivedBytes.textContent = `接收: ${this.receivedBytes}`;
+            this.elements.receivedBytes.textContent = t('接收: ') + this.receivedBytes;
 
             let content;
             if (this.elements.hexDisplay.checked) {
@@ -1358,14 +1609,14 @@
 
             } catch (error) {
                 console.error('发送失败:', error);
-                alert('发送失败: ' + error.message);
+                alert(t('发送失败: ') + error.message);
             }
         }
 
         clearOutput() {
             this.elements.receiveOutput.innerHTML = '';
             this.receivedBytes = 0;
-            this.elements.receivedBytes.textContent = '接收: 0';
+            this.elements.receivedBytes.textContent = t('接收: ') + '0';
             this.pendingContent = ''; // 清空缓冲区
             if (this.updateTimer) {
                 clearTimeout(this.updateTimer);
@@ -1397,35 +1648,35 @@
 
             switch (status) {
                 case 'standby':
-                    statusEl.textContent = "未连接";
+                    statusEl.textContent = t("未连接");
                     statusEl.classList.add('status-info');
                     break;
                 case 'scanning':
-                    statusEl.textContent = "扫描中...";
+                    statusEl.textContent = t("扫描中...");
                     statusEl.classList.add('status-connecting');
                     break;
                 case 'connecting':
-                    statusEl.textContent = "连接...";
+                    statusEl.textContent = t("连接...");
                     statusEl.classList.add('status-connecting');
                     break;
                 case 'connected':
-                    statusEl.textContent = "已连接";
+                    statusEl.textContent = t("已连接");
                     statusEl.classList.add('status-connected');
                     break;
                 case 'reconnecting':
-                    statusEl.textContent = "重连...";
+                    statusEl.textContent = t("重连...");
                     statusEl.classList.add('status-connecting');
                     break;
                 case 'disconnected':
-                    statusEl.textContent = "已断开";
+                    statusEl.textContent = t("已断开");
                     statusEl.classList.add('status-disconnected');
                     break;
                 case 'cancelled':
-                    statusEl.textContent = "已取消";
+                    statusEl.textContent = t("已取消");
                     statusEl.classList.add('status-info');
                     break;
                 case 'error':
-                    statusEl.textContent = "错误";
+                    statusEl.textContent = t("错误");
                     statusEl.classList.add('status-error');
                     break;
             }
@@ -1634,9 +1885,9 @@
             if (state === "idle") {
                 btnConnect.style.display = 'block';
                 btnDisconnect.style.display = 'none';
-                statusInfo.textContent = "未连接远程服务";
+                statusInfo.textContent = t("未连接远程服务");
                 statusInfo.style.color = "#d4d4d4";
-                if (toggleLabel) toggleLabel.textContent = '远程';
+                if (toggleLabel) toggleLabel.textContent = t('远程');
                 return;
             }
             if (state === "connecting") {
@@ -1645,7 +1896,7 @@
                 btnConnect.style.display = 'block';
                 btnConnect.disabled = true;
                 btnDisconnect.style.display = 'none';
-                statusInfo.textContent = "远程服务连接中...";
+                statusInfo.textContent = t("远程服务连接中...");
                 statusInfo.style.color = "yellow";
                 if (toggleLabel) toggleLabel.style.color = 'yellow';
                 return;
@@ -1654,11 +1905,11 @@
             serverLed.style.borderColor = '#1f8a38';
             btnConnect.style.display = 'none';
             btnDisconnect.style.display = 'block';
-            statusInfo.textContent = "已连接远程服务";
+            statusInfo.textContent = t("已连接远程服务");
             statusInfo.style.color = "rgb(0, 255, 0)";
             if (toggleLabel) {
                 toggleLabel.style.color = 'rgb(0, 255, 0)';
-                toggleLabel.textContent = '远程已连接';
+                toggleLabel.textContent = t('远程已连接');
             }
         }
 
@@ -1910,7 +2161,7 @@
 
             } catch (error) {
                 this.logDFU(`[DFU] 文件加载失败: ${error.message}`);
-                this.elements.dfuStatus.textContent = '文件错误';
+                this.elements.dfuStatus.textContent = t('文件错误');
                 this.elements.dfuStatus.className = 'dfu-status error';
                 this.firmwareData = null;
                 this.updateUI();
@@ -1948,7 +2199,7 @@
 
             if (!this.isConnected) {
                 this.logDFU('[DFU] ❌ 设备未连接，请先连接设备');
-                this.elements.dfuStatus.textContent = '未连接';
+                this.elements.dfuStatus.textContent = t('未连接');
                 this.elements.dfuStatus.className = 'dfu-status error';
                 return;
             }
@@ -1957,20 +2208,20 @@
             const smpReady = await this.ensureSMPService();
             if (!smpReady) {
                 this.logDFU('[DFU] ❌ SMP服务不可用，无法继续升级');
-                this.elements.dfuStatus.textContent = 'SMP不可用';
+                this.elements.dfuStatus.textContent = t('SMP不可用');
                 this.elements.dfuStatus.className = 'dfu-status error';
                 return;
             }
 
             if (!this.dfuManager) {
                 this.logDFU('[DFU] ❌ DFU管理器未初始化');
-                this.elements.dfuStatus.textContent = 'DFU未就绪';
+                this.elements.dfuStatus.textContent = t('DFU未就绪');
                 this.elements.dfuStatus.className = 'dfu-status error';
                 return;
             }
             if (!this.firmwareData) {
                 this.logDFU('[DFU] ❌ 未选择固件文件');
-                this.elements.dfuStatus.textContent = '未选择固件';
+                this.elements.dfuStatus.textContent = t('未选择固件');
                 this.elements.dfuStatus.className = 'dfu-status error';
                 return;
             }
@@ -1985,7 +2236,7 @@
             } catch (e) {
                 this.logDFU(`[DFU] ❌ 升级失败: ${e.message}`);
                 // this.logDFU(`[DFU] 错误堆栈: ${e.stack || 'N/A'}`);
-                // this.elements.dfuStatus.textContent = '升级失败';
+                // this.elements.dfuStatus.textContent = t('升级失败');
                 // this.elements.dfuStatus.className = 'dfu-status error';
                 // this.elements.dfuStartBtn.style.display = ''; // re-enable start button on error
                 // this.elements.dfuStopBtn.style.display = 'none';
@@ -2473,6 +2724,24 @@
         }
 
         async startDFU(firmwareData) {
+            // i18n handle: Monkey patch logDFU to translate dynamically
+            if (!this.debugger._dfuLogPatched) {
+                const orig = this.debugger.logDFU.bind(this.debugger);
+                this.debugger.logDFU = function(msg) {
+                    let outMsg = msg ? msg.toString() : '';
+                    if (window.currentLang === 'en') {
+                        const keys = Object.keys(i18nDict).sort((a, b) => b.length - a.length);
+                        for (let k of keys) {
+                            if (outMsg.includes(k)) {
+                                outMsg = outMsg.replaceAll(k, i18nDict[k]);
+                            }
+                        }
+                    }
+                    orig(outMsg);
+                }
+                this.debugger._dfuLogPatched = true;
+            }
+
             this.running = true;
             this.seq = 0;
             const statusEl = this.debugger.elements.dfuStatus;
@@ -2482,7 +2751,7 @@
             this.debugger.logDFU('[DFU] ===       DFU升级流程开始           ===');
             this.debugger.logDFU('[DFU] ========================================');
             this.debugger.logDFU(`[DFU] 固件大小: ${firmwareData.length}`);
-            statusEl.textContent = '升级中...';
+            statusEl.textContent = t('升级中...');
             statusEl.className = 'dfu-status';
 
             try {
@@ -2544,7 +2813,7 @@
                     const statusEl = this.debugger.elements.dfuStatus;
                     this.debugger.elements.dfuProgressBar.style.width = 100 + '%';
                     this.debugger.elements.dfuProgressText.textContent = '100%';
-                    statusEl.textContent = '完成';
+                    statusEl.textContent = t('完成');
                     statusEl.className = 'dfu-status success';
                     this.running = false;
                     return;
@@ -2589,7 +2858,7 @@
             } catch (e) {
                 // this.debugger.logDFU(`[DFU] ❌ DFU失败: ${e.message}`);
                 // this.debugger.logDFU(`[DFU] 错误堆栈: ${e.stack || 'N/A'}`);
-                // statusEl.textContent = '升级失败';
+                // statusEl.textContent = t('升级失败');
                 // statusEl.className = 'dfu-status error';
                 throw e;
             } finally {
@@ -2601,7 +2870,7 @@
         stopDFU() {
             this.running = false;
             this.debugger.logDFU('[DFU] 用户停止了DFU');
-            this.debugger.elements.dfuStatus.textContent = '已停止';
+            this.debugger.elements.dfuStatus.textContent = t('已停止');
             this.debugger.elements.dfuStatus.className = 'dfu-status error';
         }
     }
