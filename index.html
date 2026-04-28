@@ -161,7 +161,8 @@
             align-items: center;
         }
 
-        .receive-controls {
+        .receive-controls,
+        .receive-clear {
             display: flex;
             gap: 5px;
             align-items: center;
@@ -587,10 +588,12 @@
         <!-- 接收区域 -->
         <div class="receive-panel">
             <div class="receive-header">
-                <span id="receivedBytes">接收: 0</span>
                 <div class="receive-controls">
-                    <button id="remoteToggleBtn" class="shortcut-btn-toggle">远程</button>
                     <button id="dfuToggleBtn" class="shortcut-btn-toggle">DFU</button>
+                    <button id="remoteToggleBtn" class="shortcut-btn-toggle">远程</button>
+                </div>
+                <div class="receive-clear">
+                    <span id="receivedBytes">接收: 0</span>
                     <div class="checkbox-container">
                         <input type="checkbox" id="hexDisplay">
                         <label for="hexDisplay">HEX</label>
@@ -835,7 +838,7 @@
         "完成": "Done",
         "接收:": "RX:",
         "）": ")"
-};
+    };
 
     function t(zhStr) {
         if (window.currentLang === 'en') {
@@ -959,10 +962,10 @@
             this.pendingLogDropped = 0;
 
             this.initElements();
-            
+
             // i18n handle: Monkey patch logMessage to translate on the fly
             const originalLogMessage = this.logMessage.bind(this);
-            this.logMessage = function(message, type = 'info', isRemote = false) {
+            this.logMessage = function (message, type = 'info', isRemote = false) {
                 let outMsg = message ? message.toString() : '';
                 if (window.currentLang === 'en') {
                     // Sort keys by length strictly descending to prevent partial match overwriting
@@ -1760,9 +1763,9 @@
 
         buildLogPayload(content) {
             const cleaned = String(content || "")
-                .replace(/\x1b\[[0-9;]*m/g, "")
-                .replace(/\r\n/g, "\n")
-                .replace(/\r/g, "\n")
+                // .replace(/\x1b\[[0-9;]*m/g, "")
+                // .replace(/\r\n/g, "\n")
+                // .replace(/\r/g, "\n")
                 .replace(/\n{2,}/g, "\n")
                 .replace(/\n+$/g, "");
             if (!cleaned) return null;
@@ -2020,7 +2023,50 @@
                 this.log_w("远程日志服务器已断开");
                 this.scheduleWsReconnect("closed");
             };
+
+            ws.onmessage = async (event) => {
+                if (this.logWs !== ws) return;
+                if (!this.isConnected || !this.sendCharacteristic) return;
+                const raw = typeof event.data === 'string' ? event.data : await event.data.text();
+                if (!raw) return;
+                let parsed;
+                try { parsed = JSON.parse(raw); } catch (_) { return; }
+                if (!parsed || parsed.type !== 'send' || parsed.msg == null) return;
+                const encode = parsed.encode || 'text';
+                const timestamp = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+                const displayMsg = encode === 'hex'
+                    ? `HEX:${parsed.msg}`
+                    : parsed.msg.replace(/[\r\n]+$/, '');
+                this.pendingContent += `<span class="ansi-magenta">[${timestamp}] [\u2193] ${displayMsg}</span>\n`;
+                this.scheduleUpdate();
+                this.sendBleCmdChunked(parsed.msg, encode);
+            };
             return true;
+        }
+
+        // === 远程下行透传 ===
+        async sendBleCmdChunked(msg, encode) {
+            const BLE_CHUNK = 200; // 单次写入最大字节数（保守值，留出 ATT header 空间）
+            let bytes;
+            if (encode === 'hex') {
+                const hexStr = msg.replace(/\s+/g, '');
+                if (!/^[0-9a-fA-F]*$/.test(hexStr) || hexStr.length % 2 !== 0) {
+                    this.log_e(`[\u2193] HEX格式错误: ${msg}`);
+                    return;
+                }
+                bytes = new Uint8Array(hexStr.match(/.{2}/g).map(b => parseInt(b, 16)));
+            } else {
+                bytes = new TextEncoder().encode(msg);
+            }
+            try {
+                for (let offset = 0; offset < bytes.length; offset += BLE_CHUNK) {
+                    if (!this.isConnected || !this.sendCharacteristic) break;
+                    const chunk = bytes.subarray(offset, offset + BLE_CHUNK);
+                    await this.sendCharacteristic.writeValue(chunk);
+                }
+            } catch (e) {
+                this.log_e(`[\u2193] 透传写入失败: ${e.message}`);
+            }
         }
 
         // === DFU 相关方法 ===
@@ -2727,7 +2773,7 @@
             // i18n handle: Monkey patch logDFU to translate dynamically
             if (!this.debugger._dfuLogPatched) {
                 const orig = this.debugger.logDFU.bind(this.debugger);
-                this.debugger.logDFU = function(msg) {
+                this.debugger.logDFU = function (msg) {
                     let outMsg = msg ? msg.toString() : '';
                     if (window.currentLang === 'en') {
                         const keys = Object.keys(i18nDict).sort((a, b) => b.length - a.length);
