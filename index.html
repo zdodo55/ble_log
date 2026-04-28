@@ -1766,8 +1766,8 @@
                 // .replace(/\x1b\[[0-9;]*m/g, "")
                 // .replace(/\r\n/g, "\n")
                 // .replace(/\r/g, "\n")
-                .replace(/\n{2,}/g, "\n")
-                .replace(/\n+$/g, "");
+                .replace(/\n{2,}/g, "\n");
+            // .replace(/\n+$/g, "");
             if (!cleaned) return null;
             return {
                 ts: Math.floor(Date.now() / 1000),
