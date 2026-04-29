@@ -1450,7 +1450,10 @@
 
         processAnsiColors(text) {
             try {
-                let result = text;
+                let result = text
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
 
                 // 处理复杂格式如 \x1b[1;31m (粗体+红色)
                 const complexPattern = /\x1b\[(\d+);(\d+)m/g;
@@ -1550,9 +1553,13 @@
             }
 
             const timestamp = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+            const escapedMessage = message
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
             const plainMessage = `[${timestamp}] [${levelChar}] ${message}`;
             // 构建带颜色标签的HTML片段
-            const formattedContent = `<span class="${colorClass}">${plainMessage}</span>\n`;
+            const formattedContent = `<span class="${colorClass}">[${timestamp}] [${levelChar}] ${escapedMessage}</span>\n`;
 
             this.pendingContent += formattedContent;
             this.scheduleUpdate();
@@ -2034,9 +2041,10 @@
                 if (!parsed || parsed.type !== 'send' || parsed.msg == null) return;
                 const encode = parsed.encode || 'text';
                 const timestamp = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+                const escapeHtml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
                 const displayMsg = encode === 'hex'
-                    ? `HEX:${parsed.msg}`
-                    : parsed.msg.replace(/[\r\n]+$/, '');
+                    ? `HEX:${escapeHtml(parsed.msg)}`
+                    : escapeHtml(parsed.msg.replace(/[\r\n]+$/, ''));
                 this.pendingContent += `<span class="ansi-magenta">[${timestamp}] [\u2193] ${displayMsg}</span>\n`;
                 this.scheduleUpdate();
                 this.sendBleCmdChunked(parsed.msg, encode);
