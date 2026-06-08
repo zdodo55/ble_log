@@ -807,7 +807,6 @@
         "[DFU] 发现 ": "[DFU] Found ",
         " 个image slot": " image slots",
         "发送失败": "Send failed",
-        "扫描中...": "Scanning...",
         "错误码:": "Error code:",
         "升级中...": "Updating...",
         "断开": "Disconnect",
@@ -819,7 +818,6 @@
         "开始DFU": "Start DFU",
         "快捷": "Shortcuts",
         "已连接": "Connected",
-        "已取消": "Cancelled",
         "WiFi-Zone": "WiFi-Zone",
         "连接": "Connect",
         "电量": "Battery",
@@ -915,6 +913,7 @@
             this.autoReconnectEnabled = document.getElementById('autoReconnect').checked;
             this.reconnectTimer = null;
             this.isManualDisconnect = false; // 记录是否为手动断开
+            this.isConnecting = false; // 防止并发重入的互斥锁
 
             // 性能优化相关
             this.receiveBuffer = []; // 数据缓冲区
@@ -1175,7 +1174,6 @@
 
             // 忽略用户取消操作
             if (error.toString().match(/User cancelled/) || error.toString() === "2") {
-                this.updateStatus('cancelled');
                 return;
             }
 
@@ -1201,7 +1199,7 @@
         }
 
         async reconnectPreviousDevice() {
-            if (!this.isConnected && this.device) {
+            if (!this.isConnected && !this.isConnecting && this.device) {
                 this.isManualDisconnect = false;
                 this.updateStatus('connecting', this.device.name);
                 this.log_w(`"${this.device.name}" 正在尝试重新连接...`);
@@ -1238,8 +1236,6 @@
             try {
                 this.isManualDisconnect = false; // 重置手动断开标志
 
-                this.updateStatus('scanning');
-
                 // 请求蓝牙设备
                 const device = await navigator.bluetooth.requestDevice({
                     filters: [{
@@ -1258,59 +1254,71 @@
         }
 
         async establishConnection(device) {
-            // 连接GATT服务器
-            this.server = await device.gatt.connect();
+            // 互斥锁：防止并发重入导致重复连接
+            if (this.isConnecting) {
+                console.warn('establishConnection: 已有连接正在进行中，忽略本次调用');
+                return;
+            }
+            this.isConnecting = true;
 
-            // 尝试连接优先服务
-            let connectedService = null;
-            for (const serviceConfig of this.services) {
-                try {
-                    const service = await this.server.getPrimaryService(serviceConfig.uuid);
-                    connectedService = serviceConfig;
+            try {
+                // 连接GATT服务器
+                this.server = await device.gatt.connect();
 
-                    // 获取特征值
-                    this.sendCharacteristic = await service.getCharacteristic(serviceConfig.sendCharUuid);
-                    this.receiveCharacteristic = await service.getCharacteristic(serviceConfig.receiveCharUuid);
-                    this.log_i(`Service: ${serviceConfig.uuid}`);
-                    this.log_i(`Notify : ${this.receiveCharacteristic.uuid}`);
-                    this.log_i(`Write  : ${this.sendCharacteristic.uuid}`);
+                // 尝试连接优先服务
+                let connectedService = null;
+                for (const serviceConfig of this.services) {
+                    try {
+                        const service = await this.server.getPrimaryService(serviceConfig.uuid);
+                        connectedService = serviceConfig;
 
-                    // 启用通知
-                    await this.receiveCharacteristic.startNotifications();
-                    this.receiveCharacteristic.addEventListener('characteristicvaluechanged',
-                        (e) => this.handleReceive(e));
+                        // 获取特征值
+                        this.sendCharacteristic = await service.getCharacteristic(serviceConfig.sendCharUuid);
+                        this.receiveCharacteristic = await service.getCharacteristic(serviceConfig.receiveCharUuid);
+                        this.log_i(`Service: ${serviceConfig.uuid}`);
+                        this.log_i(`Notify : ${this.receiveCharacteristic.uuid}`);
+                        this.log_i(`Write  : ${this.sendCharacteristic.uuid}`);
 
-                    break;
-                } catch (error) {
-                    console.log(`服务 ${serviceConfig.uuid} 连接失败:`, error);
-                    // this.log_e(`服务 ${serviceConfig.uuid} 连接失败: ${error}`);
-                    continue;
+                        // 启用通知
+                        await this.receiveCharacteristic.startNotifications();
+                        this.receiveCharacteristic.addEventListener('characteristicvaluechanged',
+                            (e) => this.handleReceive(e));
+
+                        break;
+                    } catch (error) {
+                        console.log(`服务 ${serviceConfig.uuid} 连接失败:`, error);
+                        // this.log_e(`服务 ${serviceConfig.uuid} 连接失败: ${error}`);
+                        continue;
+                    }
                 }
-            }
 
-            if (!connectedService) {
-                throw new Error('无法连接到任何已知服务');
-            }
+                if (!connectedService) {
+                    throw new Error('无法连接到任何已知服务');
+                }
 
-            this.isConnected = true;
-            this.updateUI();
-            this.updateStatus('connected', device.name);
-            this.log_i(`已连接 ${device.name}`);
+                this.isConnected = true;
+                this.updateUI();
+                this.updateStatus('connected', device.name);
+                this.log_i(`已连接 ${device.name}`);
 
-            if (this.elements.keepAlive.checked) {
-                this.enableKeepAlive();
-            }
+                if (this.elements.keepAlive.checked) {
+                    this.enableKeepAlive();
+                }
 
-            // 监听设备断开
-            if (device._onDisconnect) {
-                device.removeEventListener('gattserverdisconnected', device._onDisconnect);
-            }
-            device._onDisconnect = () => this.handleDisconnect();
-            device.addEventListener('gattserverdisconnected', device._onDisconnect, { once: true });
+                // 监听设备断开
+                if (device._onDisconnect) {
+                    device.removeEventListener('gattserverdisconnected', device._onDisconnect);
+                }
+                device._onDisconnect = () => this.handleDisconnect();
+                device.addEventListener('gattserverdisconnected', device._onDisconnect, { once: true });
 
-            // 蓝牙连上设备后如果启用了自动连接且当前无连接，则自动连接远程日志服务
-            if (this.elements.autoConnectServer.checked) {
-                this.connectLogServer({ fromAuto: true, silent: true });
+                // 蓝牙连上设备后如果启用了自动连接且当前无连接，则自动连接远程日志服务
+                if (this.elements.autoConnectServer.checked) {
+                    this.connectLogServer({ fromAuto: true, silent: true });
+                }
+            } finally {
+                // 无论成功或失败，都释放互斥锁
+                this.isConnecting = false;
             }
         }
 
@@ -1363,7 +1371,7 @@
 
             this.reconnectTimer = setTimeout(async () => {
                 this.reconnectTimer = null;
-                if (this.autoReconnectEnabled && !this.isConnected && !this.isManualDisconnect && this.device) {
+                if (this.autoReconnectEnabled && !this.isConnected && !this.isConnecting && !this.isManualDisconnect && this.device) {
                     this.updateStatus('reconnecting', this.device.name);
                     // this.log_w(`"${this.device.name}" 正在重连...`);
                     try {
@@ -1661,10 +1669,6 @@
                     statusEl.textContent = t("未连接");
                     statusEl.classList.add('status-info');
                     break;
-                case 'scanning':
-                    statusEl.textContent = t("扫描中...");
-                    statusEl.classList.add('status-connecting');
-                    break;
                 case 'connecting':
                     statusEl.textContent = t("连接...");
                     statusEl.classList.add('status-connecting');
@@ -1680,10 +1684,6 @@
                 case 'disconnected':
                     statusEl.textContent = t("已断开");
                     statusEl.classList.add('status-disconnected');
-                    break;
-                case 'cancelled':
-                    statusEl.textContent = t("已取消");
-                    statusEl.classList.add('status-info');
                     break;
                 case 'error':
                     statusEl.textContent = t("错误");
